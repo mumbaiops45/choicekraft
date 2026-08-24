@@ -2,59 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-/**
- * Pen pot: an outlined ruler with tick marks between two solid brushes,
- * standing in a dotted cup. Shapes are kept chunky so they still read at ~40px.
- * Everything uses currentColor so the whole mark inverts on hover.
- */
-function PenPotIcon(props) {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" {...props}>
-      {/* Left brush */}
-      <path d="M9.8 5.4 15 8.2 18.6 27H12.4Z" fill="currentColor" />
-      {/* Right brush */}
-      <path d="M38.2 5.4 33 8.2 29.4 27h6.2Z" fill="currentColor" />
-
-      {/* Ruler */}
-      <rect
-        x="19.8"
-        y="4.6"
-        width="8.4"
-        height="22.4"
-        rx="1.4"
-        stroke="currentColor"
-        strokeWidth="2.3"
-      />
-      <path
-        d="M19.8 10h3.6M19.8 15h3.6M19.8 20h3.6"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-      />
-
-      {/* Cup */}
-      <path
-        d="M9 27h30v11.6A5.4 5.4 0 0 1 33.6 44H14.4A5.4 5.4 0 0 1 9 38.6Z"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinejoin="round"
-      />
-
-      {/* Dots */}
-      <g fill="currentColor">
-        <circle cx="15.2" cy="32.4" r="2" />
-        <circle cx="21.1" cy="32.4" r="2" />
-        <circle cx="26.9" cy="32.4" r="2" />
-        <circle cx="32.8" cy="32.4" r="2" />
-        <circle cx="15.2" cy="38.4" r="2" />
-        <circle cx="21.1" cy="38.4" r="2" />
-        <circle cx="26.9" cy="38.4" r="2" />
-        <circle cx="32.8" cy="38.4" r="2" />
-      </g>
-    </svg>
-  );
-}
-
 export default function ScrollToTop() {
   const [shown, setShown] = useState(false);
 
@@ -93,9 +40,24 @@ export default function ScrollToTop() {
         onClick={toTop}
         aria-label="Back to top"
         tabIndex={shown ? 0 : -1}
-        className="group/btn flex h-[62px] w-[62px] shrink-0 items-center justify-center text-primary transition-colors duration-300 hover:text-primary-hover lg:h-[74px] lg:w-[74px]"
+        className="group/btn flex h-[62px] w-[62px] shrink-0 items-center justify-center lg:h-[74px] lg:w-[74px]"
       >
-        <PenPotIcon className="h-11 w-11 transition-transform duration-300 group-hover/btn:scale-110 lg:h-[52px] lg:w-[52px]" />
+        {/* The PNG is a flat silhouette, so it is used as a mask and tinted
+            with the brand magenta rather than shipped pre-coloured. */}
+        <span
+          aria-hidden="true"
+          style={{
+            maskImage: "url('/images/top-arrow.png')",
+            WebkitMaskImage: "url('/images/top-arrow.png')",
+            maskSize: "contain",
+            WebkitMaskSize: "contain",
+            maskRepeat: "no-repeat",
+            WebkitMaskRepeat: "no-repeat",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          }}
+          className="block h-11 w-11 bg-magenta-500 transition-transform duration-300 group-hover/btn:scale-110 lg:h-[52px] lg:w-[52px]"
+        />
       </button>
     </div>
   );
