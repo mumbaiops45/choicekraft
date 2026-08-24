@@ -1,26 +1,250 @@
 @import "tailwindcss";
 
+/* ===========================================================================
+   ChoiceKraft design tokens
+   ---------------------------------------------------------------------------
+   Every colour below is derived from the brand mark (public/images/logo.png),
+   sampled from the file itself. The logo is a rainbow, so the UI uses ONE
+   accent (magenta) plus black and white, and keeps the remaining logo hues as
+   supporting accents for tints, icons and states.
+
+   Measured logo families and their share of saturated pixels:
+     orange / yellow  ~12.8%   #ffc000  #f06018  #f0c000
+     blue             ~11.6%   #4860a8  #4878c0  #4890c0
+     coral / red       ~8.0%   #f06048  #f06060  #f04830
+     magenta / pink    ~7.2%   #f01860  #f00078  #904890
+     teal              ~5.5%   #48c0a8
+
+   Every value used for text or as a fill behind text meets WCAG AA (4.5:1).
+   Ratios are noted inline — keep them if you retune anything.
+   =========================================================================== */
+
 :root {
+  /* --- Base surfaces --------------------------------------------------- */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #16161a;
+
+  /* --- Magenta: the brand accent (from the logo's pink) ---------------- */
+  --brand-magenta-50: #fdf2f8;
+  --brand-magenta-100: #fce7f1;
+  --brand-magenta-200: #fbcfe3;
+  --brand-magenta-300: #f8a3c8;
+  --brand-magenta-400: #f25b9e;
+  --brand-magenta-500: #e91e78; /* closest to the raw logo pink */
+  --brand-magenta-600: #d6156b; /* PRIMARY — 5.03:1 on white */
+  --brand-magenta-700: #b30f59; /* hover — 6.71:1 on white */
+  --brand-magenta-800: #8d0c46;
+  --brand-magenta-900: #660832;
+
+  /* --- Supporting logo hues -------------------------------------------- */
+  /* Blue */
+  --brand-blue-100: #e6ebf6;
+  --brand-blue-300: #90a6d4;
+  --brand-blue-500: #4878c0;
+  --brand-blue-600: #4860a8; /* 5.98:1 with white */
+  --brand-blue-700: #3a4f8a;
+
+  /* Teal */
+  --brand-teal-100: #e2f6f1;
+  --brand-teal-300: #8ddac9;
+  --brand-teal-500: #48c0a8; /* raw logo teal — tints only */
+  --brand-teal-700: #23796a; /* 5.23:1 with white */
+
+  /* Amber — light by nature: dark text only */
+  --brand-amber-100: #fff5db;
+  --brand-amber-300: #ffdd80;
+  --brand-amber-500: #ffc000; /* raw logo yellow, 10.99:1 with ink */
+  --brand-amber-700: #c99600;
+
+  /* Coral */
+  --brand-coral-100: #fdeae6;
+  --brand-coral-300: #f7a795;
+  --brand-coral-500: #f06048; /* raw logo coral — tints only */
+  --brand-coral-700: #c73a22; /* 5.18:1 with white */
+
+  /* --- Neutrals --------------------------------------------------------- */
+  --brand-black: #0f0f12;
+  --brand-ink: #16161a; /* 18.04:1 on white */
+  --brand-ink-soft: #3d3d45; /* 10.76:1 on white */
+  --brand-muted: #6f6f7a; /* 4.96:1 on white, 4.60:1 on surface */
+  --brand-line-soft: #eeeef1;
+  --brand-line: #e3e3e8;
+  --brand-line-strong: #d4d4dc;
+  --brand-surface: #f6f6f8;
+  --brand-surface-alt: #fafafb;
+  --brand-surface-hover: #eeeef1;
+
+  /* --- Semantic aliases -------------------------------------------------- */
+  --primary: var(--brand-magenta-600);
+  --primary-hover: var(--brand-magenta-700);
+  --primary-soft: var(--brand-magenta-50);
+  --primary-foreground: #ffffff;
+
+  --secondary: var(--brand-ink);
+  --secondary-hover: var(--brand-black);
+  --secondary-foreground: #ffffff;
+
+  --accent: var(--brand-blue-600);
+  --accent-foreground: #ffffff;
+
+  --success: var(--brand-teal-700);
+  --warning: var(--brand-amber-500);
+  --danger: var(--brand-coral-700);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* Magenta scale -> bg-magenta-500, text-magenta-700, ... */
+  --color-magenta-50: var(--brand-magenta-50);
+  --color-magenta-100: var(--brand-magenta-100);
+  --color-magenta-200: var(--brand-magenta-200);
+  --color-magenta-300: var(--brand-magenta-300);
+  --color-magenta-400: var(--brand-magenta-400);
+  --color-magenta-500: var(--brand-magenta-500);
+  --color-magenta-600: var(--brand-magenta-600);
+  --color-magenta-700: var(--brand-magenta-700);
+  --color-magenta-800: var(--brand-magenta-800);
+  --color-magenta-900: var(--brand-magenta-900);
+
+  /* Supporting logo hues */
+  --color-brandblue-100: var(--brand-blue-100);
+  --color-brandblue-300: var(--brand-blue-300);
+  --color-brandblue-500: var(--brand-blue-500);
+  --color-brandblue-600: var(--brand-blue-600);
+  --color-brandblue-700: var(--brand-blue-700);
+
+  --color-brandteal-100: var(--brand-teal-100);
+  --color-brandteal-300: var(--brand-teal-300);
+  --color-brandteal-500: var(--brand-teal-500);
+  --color-brandteal-700: var(--brand-teal-700);
+
+  --color-brandamber-100: var(--brand-amber-100);
+  --color-brandamber-300: var(--brand-amber-300);
+  --color-brandamber-500: var(--brand-amber-500);
+  --color-brandamber-700: var(--brand-amber-700);
+
+  --color-brandcoral-100: var(--brand-coral-100);
+  --color-brandcoral-300: var(--brand-coral-300);
+  --color-brandcoral-500: var(--brand-coral-500);
+  --color-brandcoral-700: var(--brand-coral-700);
+
+  /* Neutrals -> bg-ink, text-muted, border-line, ... */
+  --color-ink: var(--brand-ink);
+  --color-ink-soft: var(--brand-ink-soft);
+  --color-black-brand: var(--brand-black);
+  --color-muted: var(--brand-muted);
+  --color-line-soft: var(--brand-line-soft);
+  --color-line: var(--brand-line);
+  --color-line-strong: var(--brand-line-strong);
+  --color-surface: var(--brand-surface);
+  --color-surface-alt: var(--brand-surface-alt);
+  --color-surface-hover: var(--brand-surface-hover);
+
+  /* Semantic -> bg-primary, hover:bg-primary-hover, text-primary-foreground */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-poppins), "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  /* Anchor targets clear the sticky navbar */
+  scroll-padding-top: 100px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-poppins), "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Consistent keyboard focus everywhere */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* --- Motion --------------------------------------------------------- */
+
+@keyframes ck-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ck-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes ck-scroll-cue {
+  0% {
+    transform: translateY(-40%);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(140%);
+    opacity: 0;
+  }
+}
+
+/* Hero copy rises on load; children stagger via --d */
+.ck-rise {
+  animation: ck-rise 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Short rule that draws itself out from the left */
+.ck-rule {
+  transform-origin: left;
+  animation: ck-draw 700ms cubic-bezier(0.77, 0, 0.175, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.ck-scroll-cue {
+  animation: ck-scroll-cue 1900ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
