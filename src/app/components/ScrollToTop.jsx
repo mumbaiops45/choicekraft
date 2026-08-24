@@ -2,20 +2,26 @@
 
 import { useEffect, useState } from "react";
 
+import useFooterOffset from "../hooks/useFooterOffset";
+import { TopArrowMark, scrollToTop } from "./BackToTopButton";
+
+/**
+ * Floating back-to-top button. Appears once the page has been scrolled a
+ * screenful or so, and steps aside when the footer — which carries its own
+ * back-to-top button — comes into view, so only one is ever on screen.
+ */
 export default function ScrollToTop() {
-  const [shown, setShown] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const footerOffset = useFooterOffset();
 
   useEffect(() => {
-    const onScroll = () => setShown(window.scrollY > 500);
+    const onScroll = () => setScrolled(window.scrollY > 500);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const toTop = () => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-  };
+  const shown = scrolled && footerOffset === 0;
 
   return (
     <div
@@ -37,27 +43,13 @@ export default function ScrollToTop() {
       </span>
 
       <button
-        onClick={toTop}
+        type="button"
+        onClick={scrollToTop}
         aria-label="Back to top"
         tabIndex={shown ? 0 : -1}
         className="group/btn flex h-[62px] w-[62px] shrink-0 items-center justify-center lg:h-[74px] lg:w-[74px]"
       >
-        {/* The PNG is a flat silhouette, so it is used as a mask and tinted
-            with the brand magenta rather than shipped pre-coloured. */}
-        <span
-          aria-hidden="true"
-          style={{
-            maskImage: "url('/images/top-arrow.png')",
-            WebkitMaskImage: "url('/images/top-arrow.png')",
-            maskSize: "contain",
-            WebkitMaskSize: "contain",
-            maskRepeat: "no-repeat",
-            WebkitMaskRepeat: "no-repeat",
-            maskPosition: "center",
-            WebkitMaskPosition: "center",
-          }}
-          className="block h-11 w-11 bg-magenta-500 transition-transform duration-300 group-hover/btn:scale-110 lg:h-[52px] lg:w-[52px]"
-        />
+        <TopArrowMark className="h-11 w-11 transition-transform duration-300 group-hover/btn:scale-110 lg:h-[52px] lg:w-[52px]" />
       </button>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { Phone } from "lucide-react";
 import { WhatsAppIcon, whatsappHref } from "./BrandIcons";
+import useFooterOffset from "../hooks/useFooterOffset";
 
 const PHONE = "+917400181786";
 
@@ -10,6 +11,8 @@ const PHONE = "+917400181786";
  * button. Sitewide, so a customer can reach you from any page.
  */
 export default function FloatingActions() {
+  const footerOffset = useFooterOffset();
+
   const actions = [
     {
       label: "Chat on WhatsApp",
@@ -30,7 +33,10 @@ export default function FloatingActions() {
   ];
 
   return (
-    <div className="fixed bottom-28 right-5 z-50 flex flex-col gap-3 lg:bottom-32 lg:right-6">
+    <div
+      style={{ marginBottom: footerOffset }}
+      className="fixed bottom-28 right-5 z-50 flex flex-col gap-3 lg:bottom-32 lg:right-6"
+    >
       {actions.map(({ label, href, external, Icon, className }) => (
         <a
           key={label}

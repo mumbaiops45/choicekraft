@@ -10,6 +10,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { WhatsAppIcon, InstagramIcon, whatsappHref } from "./BrandIcons";
+import BackToTopButton from "./BackToTopButton";
 
 const trust = [
   { icon: ShieldCheck, label: "Secure Payments" },
@@ -49,7 +50,7 @@ const socials = [
 
 export default function Footer() {
   return (
-    <footer className="relative bg-ink text-white">
+    <footer data-site-footer className="relative bg-ink text-white">
       {/* Pink hairline across the top */}
       <span aria-hidden="true" className="block h-[3px] w-full bg-primary" />
 
@@ -135,7 +136,7 @@ export default function Footer() {
           </div>
 
           {/* Contact */}
-          <div>
+          <div className="flex flex-col">
             <h3 className="text-[13px] font-bold uppercase tracking-[2px]">
               Contact
             </h3>
@@ -202,6 +203,9 @@ export default function Footer() {
                 <Send size={17} strokeWidth={2} />
               </button>
             </form>
+
+            {/* Back to top, tucked into the spare room beside the contact details */}
+            <BackToTopButton className="mt-8 self-start sm:ml-auto" />
           </div>
         </div>
       </div>
