@@ -21,8 +21,18 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${poppins.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-white">
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${poppins.variable} h-full antialiased`}
+    >
+      {/* Browser extensions (Grammarly, password managers, ...) stamp their own
+          attributes onto <body> before React hydrates. Only this element's own
+          attributes are exempted; children still report real mismatches. */}
+      <body
+        suppressHydrationWarning
+        className="flex min-h-full flex-col bg-white"
+      >
         <CartProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

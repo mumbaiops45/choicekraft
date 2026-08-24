@@ -9,6 +9,10 @@ import { useEffect, useRef, useState } from "react";
  * applied on the client only, and only to elements still below the fold — so a
  * blocked or slow script can never leave content permanently invisible.
  * Skipped entirely under prefers-reduced-motion.
+ *
+ * Note there is deliberately no timer that force-reveals: one would fire while
+ * the content was still far below the fold and burn the animation before the
+ * reader ever got there. The observer is the only thing that unhides.
  */
 export default function Reveal({
   children,
@@ -45,15 +49,7 @@ export default function Reveal({
 
     observer.observe(node);
 
-    const failsafe = setTimeout(() => {
-      setHidden(false);
-      observer.disconnect();
-    }, 2500);
-
-    return () => {
-      observer.disconnect();
-      clearTimeout(failsafe);
-    };
+    return () => observer.disconnect();
   }, []);
 
   return (
