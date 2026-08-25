@@ -29,7 +29,10 @@ const quickLinks = [
 const policies = [
   { name: "FAQs", href: "/policies/faqs" },
   { name: "Privacy Policy", href: "/policies/privacy-policy" },
-  { name: "Return & Refund Policy", href: "/policies/return-and-refund-policy" },
+  {
+    name: "Return, Refund & Cancellation Policy",
+    href: "/policies/return-and-refund-policy",
+  },
   { name: "Shipping Policy", href: "/policies/shipping-policy" },
 ];
 

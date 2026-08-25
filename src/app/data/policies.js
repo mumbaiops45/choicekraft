@@ -46,16 +46,24 @@ export const faqs = [
         a: "Delivery is free on orders over ₹1,999. Below that, a flat shipping charge is shown at checkout before you pay.",
       },
       {
-        q: "How long will my order take?",
-        a: "Orders placed on a working day before 2pm are usually dispatched the same day. Metro addresses typically arrive in 2–4 working days, and other locations in 4–7.",
+        q: "When will my order ship?",
+        a: "Confirmed orders are processed and dispatched within 1–2 business days. Orders placed on a weekend or public holiday are processed on the next business day. Bulk and custom-print orders have their own lead time, which we confirm in writing when we quote.",
+      },
+      {
+        q: "When will my order arrive?",
+        a: "Once dispatched, metro addresses typically receive parcels in 2–4 working days and other locations in 4–7. These are courier estimates rather than guarantees — weather, strikes, local restrictions and peak periods can add time.",
       },
       {
         q: "Can I track my parcel?",
         a: "Yes. You will receive a tracking link by email and SMS once the courier collects your parcel.",
       },
       {
-        q: "Do you deliver everywhere in India?",
-        a: "We deliver to any address our courier partners serve. A small number of remote PIN codes are not serviceable — the checkout will tell you if yours is one of them.",
+        q: "Where do you ship to?",
+        a: "We ship across India, to any PIN code our courier partners serve. A small number of remote locations are not serviceable — the checkout will tell you if yours is one of them. We do not currently ship outside India.",
+      },
+      {
+        q: "Can you leave my order outside my door?",
+        a: "Our courier partners need someone to receive the parcel and record a delivery confirmation, so we cannot promise a no-contact drop. You are welcome to add a delivery note at checkout and the courier will do their best to honour it, but anything left unattended at your request is at your own risk. If nobody is available the shipment may be returned to us.",
       },
     ],
   },
@@ -69,6 +77,10 @@ export const faqs = [
       {
         q: "Can we order in bulk for a school or office?",
         a: "That is a large part of what we do. We offer tiered pricing for schools, colleges and offices, and can print custom covers carrying your institution's name. Send us your requirement and we will quote within one working day.",
+      },
+      {
+        q: "Collaboration or partnership with ChoiceKraft",
+        a: "We are open to working with artists, designers, retailers and institutions. Write to us at " + CONTACT.email + " with an outline of what you have in mind and some examples of your work, and the right person will come back to you.",
       },
       {
         q: "Can we get custom printed covers?",
@@ -92,7 +104,7 @@ export const faqs = [
         a: "Refunds are issued within 5–7 working days of us receiving and checking the returned item, back to the original payment method.",
       },
       {
-        q: "What payment methods do you accept?",
+        q: "What payments do you accept?",
         a: "UPI, major debit and credit cards, net banking and popular wallets. For approved institutional accounts we can also invoice against a purchase order.",
       },
     ],
@@ -170,66 +182,81 @@ export const policies = {
   },
 
   "return-and-refund-policy": {
-    title: "Return & Refund Policy",
+    title: "Return, Refund & Cancellation Policy",
     intro:
-      "If something is not right, we will put it right. This policy sets out what can be returned, how long you have, and how refunds are issued.",
+      "At ChoiceKraft, we are committed to delivering high-quality stationery products. This policy outlines the terms and conditions for returns, refunds, and cancellations.",
     sections: [
       {
-        heading: "Your return window",
+        heading: "Eligibility for returns",
         body: [
-          "You have seven days from the day your order is delivered to raise a return. Tell us within that window and we will guide you through it — the item does not have to be back with us by day seven.",
+          "Customers may request a return within 7 days of delivery, subject to the following conditions:",
         ],
-      },
-      {
-        heading: "What can be returned",
-        body: ["We accept returns on items that are:"],
         list: [
-          "Unused and in re-saleable condition.",
-          "In their original packaging, with any seals intact.",
-          "Accompanied by the invoice or order number.",
+          "The product must be unused, unaltered, and in original condition.",
+          "The product must be returned in its original packaging with all tags and accessories.",
+          "A valid proof of purchase (order ID / invoice) must be provided.",
+        ],
+        outro: [
+          "ChoiceKraft reserves the right to reject any return request that does not meet these conditions.",
         ],
       },
       {
-        heading: "What cannot be returned",
-        body: ["For hygiene, safety or practical reasons we cannot take back:"],
+        heading: "Non-returnable items",
+        body: ["The following items are not eligible for return:"],
         list: [
-          "Custom-printed note books or covers made to your specification.",
-          "Items that have been written in, used, or had their seal broken.",
-          "Products returned incomplete or without their packaging.",
-          "Anything reported more than seven days after delivery.",
+          "Products that have been used, damaged, or altered after delivery.",
+          "Items returned without original packaging.",
+          "Products damaged due to improper handling by the customer.",
         ],
       },
       {
-        heading: "Damaged, faulty or wrong items",
-        body: [
-          "If your order arrives damaged, faulty or is not what you ordered, tell us within 48 hours of delivery and send a photograph. We will replace the item or refund it in full, and we will cover the return shipping. This applies whatever the item is, including custom work.",
-        ],
-      },
-      {
-        heading: "How to start a return",
-        body: ["Three steps:"],
+        heading: "Return process",
+        body: ["To initiate a return:"],
         list: [
-          "Email us with your order number and what is wrong, attaching photographs where relevant.",
-          "We will confirm the return and tell you where to send the item, or arrange a pickup.",
-          "Pack it securely with the invoice inside and hand it to the courier.",
+          "Contact us at " + CONTACT.email + " within 7 days of delivery.",
+          "Provide your order ID and reason for return.",
+          "Our team will review your request and provide return instructions.",
+        ],
+        outro: ["Returns sent without prior approval may not be accepted."],
+      },
+      {
+        heading: "Refund policy",
+        list: [
+          "Once the returned product is received and inspected, we will notify you of the approval or rejection of your refund.",
+          "If approved, the refund will be processed within 5–7 business days.",
+          "Refunds will be issued to the original payment method.",
         ],
       },
       {
-        heading: "Refunds",
-        body: [
-          "Once the item reaches us we check it and issue your refund within 5–7 working days, to the payment method you originally used. Bank processing can add a few days at their end. If the return was our error, the original delivery charge is refunded too.",
+        heading: "Shipping charges",
+        list: [
+          "Original shipping charges are non-refundable.",
+          "Customers are responsible for return shipping costs.",
+          "If the return is due to a defective, damaged, or incorrect product, ChoiceKraft will bear the return shipping cost.",
         ],
       },
       {
-        heading: "Exchanges",
-        body: [
-          "Want a different item rather than your money back? Tell us when you raise the return. We will send the replacement once the original is on its way back, and settle any price difference either way.",
+        heading: "Damaged or incorrect products",
+        body: ["If you receive a defective or incorrect item:"],
+        list: [
+          "Notify us within 48 hours of delivery.",
+          "Share clear photos or videos as proof.",
+          "We will arrange a replacement or full refund at no extra cost.",
         ],
       },
       {
-        heading: "Bulk and institutional orders",
-        body: [
-          "Bulk orders are checked against your purchase order before dispatch, so returns are handled case by case. Quantity or specification errors on our side are always corrected at our cost. Contact your account manager or write to us directly.",
+        heading: "Order cancellation",
+        list: [
+          "Orders can be cancelled before dispatch only.",
+          "Once the order is shipped, cancellation requests will not be accepted.",
+        ],
+      },
+      {
+        heading: "Contact information",
+        body: ["For any queries regarding returns or refunds, please contact:"],
+        list: [CONTACT.email, CONTACT.phone],
+        outro: [
+          "ChoiceKraft reserves the right to update or modify this policy at any time without prior notice.",
         ],
       },
     ],
@@ -238,51 +265,68 @@ export const policies = {
   "shipping-policy": {
     title: "Shipping Policy",
     intro:
-      "How and when we dispatch orders, what delivery costs, and where we can deliver.",
+      "This Shipping Policy outlines the terms and conditions governing the shipment and delivery of products purchased from our website.",
     sections: [
       {
-        heading: "Dispatch times",
+        heading: "Serviceable locations",
         body: [
-          "Orders placed on a working day before 2pm are usually dispatched the same afternoon. Orders placed later, at weekends, or on public holidays go out on the next working day. Bulk and custom-print orders have their own lead time, which we confirm in writing when we quote.",
+          "We currently offer shipping services across India. Delivery availability is subject to the serviceability of our logistics partners in the provided PIN code.",
         ],
       },
       {
-        heading: "Delivery charges",
-        body: ["Charges are calculated at checkout before you pay:"],
+        heading: "Order processing",
+        body: [
+          "All confirmed orders are processed within 1–2 business days from the date of order confirmation. Orders placed on weekends or public holidays will be processed on the next business day.",
+        ],
+      },
+      {
+        heading: "Shipping charges",
         list: [
-          "Orders over ₹1,999 — free delivery anywhere we serve.",
-          "Orders under ₹1,999 — a flat shipping charge, shown at checkout.",
-          "Bulk and freight consignments — quoted separately, based on weight and destination.",
+          "A standard shipping fee of ₹49 applies to orders below ₹499.",
+          "Free shipping is offered on orders with a cart value of ₹499 and above.",
+          "Shipping charges, if applicable, will be displayed at checkout before payment confirmation.",
         ],
       },
       {
-        heading: "Delivery times",
+        heading: "Shipment tracking",
         body: [
-          "Once dispatched, metro addresses generally receive parcels in 2–4 working days and other locations in 4–7. These are courier estimates rather than guarantees; weather, strikes and local restrictions can add time.",
+          "Upon dispatch, customers will receive shipment confirmation along with a tracking ID or link via registered email and/or SMS. Tracking information may take up to 24 hours to become active.",
         ],
       },
       {
-        heading: "Tracking your order",
+        heading: "Delivery attempts",
         body: [
-          "You will get a tracking link by email and SMS when the courier collects your parcel. If tracking has not updated for more than 48 hours, contact us and we will chase the courier on your behalf.",
+          "Our logistics partners will make multiple delivery attempts. In case of unsuccessful delivery due to customer unavailability or incorrect address details, the shipment may be returned to origin (RTO).",
         ],
       },
       {
-        heading: "Where we deliver",
+        heading: "Address accuracy",
         body: [
-          "We deliver across India to any PIN code our courier partners serve. A small number of remote locations are not serviceable — checkout will flag this before you pay. We do not currently ship outside India.",
+          "Customers are required to provide complete and accurate shipping information. We shall not be liable for delays, non-delivery, or additional charges arising from incorrect or incomplete address details.",
         ],
       },
       {
-        heading: "Receiving your order",
+        heading: "Delays and force majeure",
         body: [
-          "Please check the parcel before signing for it. If the outer packaging is torn, crushed or wet, note it with the delivery agent and photograph it. That makes a damage claim much easier to settle. Report any damage to us within 48 hours.",
+          "Delivery timelines may be impacted due to events beyond our control, including but not limited to:",
+        ],
+        list: [
+          "Natural disasters, strikes, or lockdowns.",
+          "Transportation disruptions.",
+          "High order volumes.",
+        ],
+        outro: ["In such cases, delivery timelines will be extended accordingly."],
+      },
+      {
+        heading: "Damaged or tampered packages",
+        body: [
+          "Customers are advised to inspect the package at the time of delivery. In case of visible damage or tampering, the customer should refuse delivery or report the issue within 24 hours of receipt.",
         ],
       },
       {
-        heading: "Failed deliveries",
+        heading: "Limitation of liability",
         body: [
-          "Couriers normally attempt delivery up to three times. If nobody is available, the parcel returns to us and we will contact you to arrange a re-send. Re-delivery after a failed attempt caused by an incorrect or incomplete address may carry a further shipping charge.",
+          "To the maximum extent permitted by law, our liability for any shipping-related issue shall be limited to the value of the product purchased. We shall not be liable for any indirect, incidental, or consequential damages.",
         ],
       },
     ],
@@ -292,6 +336,9 @@ export const policies = {
 export const policyList = [
   { slug: "faqs", title: "FAQs" },
   { slug: "privacy-policy", title: "Privacy Policy" },
-  { slug: "return-and-refund-policy", title: "Return & Refund Policy" },
+  {
+    slug: "return-and-refund-policy",
+    title: "Return, Refund & Cancellation Policy",
+  },
   { slug: "shipping-policy", title: "Shipping Policy" },
 ];
