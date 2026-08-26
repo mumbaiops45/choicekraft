@@ -39,7 +39,9 @@ const policies = [
 const socials = [
   {
     name: "WhatsApp",
-    href: whatsappHref("Hi ChoiceKraft, I have a question about your products."),
+    href: whatsappHref(
+      "Hi ChoiceKraft, I have a question about your products.",
+    ),
     Icon: WhatsAppIcon,
     hover: "hover:bg-[#25D366] hover:border-[#25D366]",
   },
@@ -147,7 +149,11 @@ export default function Footer() {
 
             <ul className="mt-6 space-y-4 text-white/60">
               <li className="flex gap-3">
-                <Mail size={17} strokeWidth={1.8} className="mt-0.5 shrink-0 text-primary" />
+                <Mail
+                  size={17}
+                  strokeWidth={1.8}
+                  className="mt-0.5 shrink-0 text-primary"
+                />
                 <a
                   href="mailto:support@choicekraft.com"
                   className="break-all transition-colors hover:text-primary"
@@ -156,7 +162,11 @@ export default function Footer() {
                 </a>
               </li>
               <li className="flex gap-3">
-                <Phone size={17} strokeWidth={1.8} className="mt-0.5 shrink-0 text-primary" />
+                <Phone
+                  size={17}
+                  strokeWidth={1.8}
+                  className="mt-0.5 shrink-0 text-primary"
+                />
                 <a
                   href="tel:+917400181786"
                   className="transition-colors hover:text-primary"
@@ -165,28 +175,36 @@ export default function Footer() {
                 </a>
               </li>
               <li className="flex gap-3">
-                <MapPin size={17} strokeWidth={1.8} className="mt-0.5 shrink-0 text-primary" />
+                <MapPin
+                  size={17}
+                  strokeWidth={1.8}
+                  className="mt-0.5 shrink-0 text-primary"
+                />
                 <span>Maharashtra, India</span>
               </li>
             </ul>
 
-            {/* Social */}
-            <div className="mt-7 flex gap-3">
-              {socials.map(({ name, href, Icon, hover }) => (
-                <a
-                  key={name}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={name}
-                  className={
-                    "flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:text-white " +
-                    hover
-                  }
-                >
-                  <Icon className="h-[18px] w-[18px]" />
-                </a>
-              ))}
+            {/* Social, sharing its line with the back-to-top control */}
+            <div className="mt-7 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex gap-3">
+                {socials.map(({ name, href, Icon, hover }) => (
+                  <a
+                    key={name}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={name}
+                    className={
+                      "flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:text-white " +
+                      hover
+                    }
+                  >
+                    <Icon className="h-[18px] w-[18px]" />
+                  </a>
+                ))}
+              </div>
+
+              <BackToTopButton />
             </div>
 
             {/* Newsletter */}
@@ -206,9 +224,6 @@ export default function Footer() {
                 <Send size={17} strokeWidth={2} />
               </button>
             </form>
-
-            {/* Back to top, tucked into the spare room beside the contact details */}
-            <BackToTopButton className="mt-8 self-start sm:ml-auto" />
           </div>
         </div>
       </div>

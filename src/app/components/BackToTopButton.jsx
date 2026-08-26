@@ -30,7 +30,8 @@ export function scrollToTop() {
 
 /**
  * Back-to-top control that lives inline in the footer rather than floating
- * over the page.
+ * over the page. Laid out as a compact row so it can share the social-icon
+ * line instead of adding a block of its own below the newsletter.
  */
 export default function BackToTopButton({ className = "" }) {
   return (
@@ -39,11 +40,11 @@ export default function BackToTopButton({ className = "" }) {
       onClick={scrollToTop}
       aria-label="Back to top"
       className={
-        "group/btn flex flex-col items-center gap-2 text-white/60 transition-colors duration-300 hover:text-white " +
+        "group/btn flex items-center gap-2.5 text-white/60 transition-colors duration-300 hover:text-white " +
         className
       }
     >
-      <TopArrowMark className="h-12 w-12 transition-transform duration-300 group-hover/btn:-translate-y-1 lg:h-14 lg:w-14" />
+      <TopArrowMark className="h-9 w-9 transition-transform duration-300 group-hover/btn:-translate-y-1" />
       <span className="text-[10px] font-semibold uppercase tracking-[1.5px]">
         Back to top
       </span>
