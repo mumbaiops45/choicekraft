@@ -4,13 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../store/AuthStore";
+import { useWishlist } from "../store/WishlistStore";
 import CartDrawer from "./CartDrawer";
+import WishlistDrawer from "./WishlistDrawer";
 import SearchOverlay from "./SearchOverlay";
 import AccountPanel from "./AccountPanel";
 import {
   Search,
   UserCircle,
   ShoppingBag,
+  Heart,
   Menu,
   X,
   ChevronDown,
@@ -37,8 +41,10 @@ export default function Navbar() {
   const [openMenu, setOpenMenu] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [wishlistOpen, setWishlistOpen] = useState(false);
   const { count, setOpen: setCartOpen } = useCart();
+  const { isAuthenticated, accountOpen, openAccount, closeAccount } = useAuth();
+  const wishlist = useWishlist();
   const navRef = useRef(null);
 
   // Float as a contained bar at the top of the page, then stick full-width once
@@ -199,12 +205,29 @@ export default function Navbar() {
           </button>
 
           <button
-            onClick={() => setAccountOpen(true)}
+            onClick={openAccount}
             aria-label="Account"
             className="flex w-[70px] items-center justify-center bg-line-soft transition-colors hover:bg-line"
           >
             <UserCircle size={25} strokeWidth={1.7} className="text-ink" />
           </button>
+
+          {/* Saved items. Only for signed-in shoppers — the wishlist lives on
+              their account, so there is nothing to show otherwise. */}
+          {isAuthenticated && (
+            <button
+              onClick={() => setWishlistOpen(true)}
+              aria-label={"Wishlist, " + wishlist.count + " items"}
+              className="relative flex w-[70px] items-center justify-center bg-line-soft transition-colors hover:bg-line"
+            >
+              <Heart size={25} strokeWidth={1.7} className="text-ink" />
+              {wishlist.count > 0 && (
+                <span className="absolute right-[14px] top-[20px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold leading-none text-primary-foreground">
+                  {wishlist.count}
+                </span>
+              )}
+            </button>
+          )}
 
           <button
             onClick={() => setCartOpen(true)}
@@ -220,6 +243,21 @@ export default function Navbar() {
 
         {/* Mobile actions */}
         <div className="ml-auto flex items-center lg:hidden">
+          {isAuthenticated && (
+            <button
+              onClick={() => setWishlistOpen(true)}
+              aria-label={"Wishlist, " + wishlist.count + " items"}
+              className="relative flex h-full w-[52px] items-center justify-center"
+            >
+              <Heart size={23} strokeWidth={1.6} className="text-ink" />
+              {wishlist.count > 0 && (
+                <span className="absolute right-1 top-4 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
+                  {wishlist.count}
+                </span>
+              )}
+            </button>
+          )}
+
           <button
             onClick={() => setCartOpen(true)}
             aria-label={"Shopping cart, " + count + " items"}
@@ -312,7 +350,7 @@ export default function Navbar() {
                 <Search size={22} strokeWidth={1.6} className="text-ink" />
               </button>
               <button
-                onClick={() => { setMobileOpen(false); setAccountOpen(true); }}
+                onClick={() => { setMobileOpen(false); openAccount(); }}
                 aria-label="Account"
                 className="flex flex-1 items-center justify-center border-l border-line-soft py-4 hover:bg-surface"
               >
@@ -325,7 +363,11 @@ export default function Navbar() {
     </header>
 
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <AccountPanel open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountPanel open={accountOpen} onClose={closeAccount} />
+      <WishlistDrawer
+        open={wishlistOpen}
+        onClose={() => setWishlistOpen(false)}
+      />
       <CartDrawer />
     </>
   );

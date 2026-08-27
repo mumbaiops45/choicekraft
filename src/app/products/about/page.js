@@ -11,6 +11,7 @@ import Reveal from "../../components/Reveal";
 import RevealImage from "../../components/RevealImage";
 import CountUp from "../../components/CountUp";
 import CoverSlider from "../../components/CoverSlider";
+import { getNotebooks } from "@/lib/services/productService";
 
 export const metadata = {
   title: "About Us | ChoiceKraft",
@@ -47,7 +48,9 @@ const stats = [
   { to: 100, unit: "%", label: "Made in-house" },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const notebooks = await getNotebooks();
+
   return (
     <>
       {/* ---------------------------------------------------------------- */}
@@ -286,7 +289,7 @@ export default function AboutPage() {
           </Reveal>
 
           <Reveal delay={140} className="mt-14">
-            <CoverSlider />
+            <CoverSlider books={notebooks} />
           </Reveal>
         </div>
       </section>

@@ -1,12 +1,14 @@
 import PageHeader from "../components/PageHeader";
 import ProductBrowser from "../components/ProductBrowser";
-import { notebooks } from "../data/products";
+import { getNotebooks } from "@/lib/services/productService";
 
 export const metadata = {
   title: "Note Books | ChoiceKraft",
 };
 
-export default function NotebooksPage() {
+export default async function NotebooksPage() {
+  const notebooks = await getNotebooks();
+
   return (
     <>
       <PageHeader title="Note Books" crumb="NOTE BOOKS" />

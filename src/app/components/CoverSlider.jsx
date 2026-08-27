@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { notebooks } from "../data/products";
+
 
 const AUTOPLAY_MS = 3800;
 
-export default function CoverSlider() {
+export default function CoverSlider({ books = [] }) {
   const trackRef = useRef(null);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -19,13 +19,16 @@ export default function CoverSlider() {
     if (!card) return;
 
     const step = card.offsetWidth + 24;
-    const target = ((next % notebooks.length) + notebooks.length) % notebooks.length;
+    const count = books.length;
+    if (!count) return;
+
+    const target = ((next % count) + count) % count;
 
     // Don't scroll past the end — clamp to the last full page of cards.
     const max = track.scrollWidth - track.clientWidth;
     track.scrollTo({ left: Math.min(target * step, max), behavior: "smooth" });
     setIndex(target);
-  }, []);
+  }, [books.length]);
 
   useEffect(() => {
     if (paused) return;
@@ -39,6 +42,8 @@ export default function CoverSlider() {
     return () => clearInterval(timer);
   }, [index, paused, scrollTo]);
 
+  if (books.length === 0) return null;
+
   return (
     <div
       onMouseEnter={() => setPaused(true)}
@@ -48,7 +53,7 @@ export default function CoverSlider() {
         ref={trackRef}
         className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {notebooks.map((book) => (
+        {books.map((book) => (
           <figure
             key={book.slug}
             data-cover
@@ -68,9 +73,11 @@ export default function CoverSlider() {
                 {book.type}
               </p>
               <p className="mt-1 text-[16px] font-bold text-ink">{book.name}</p>
-              <p className="mt-1.5 text-[13px] italic leading-[21px] text-muted">
-                &ldquo;{book.quote}&rdquo;
-              </p>
+              {book.quote && (
+                <p className="mt-1.5 text-[13px] italic leading-[21px] text-muted">
+                  &ldquo;{book.quote}&rdquo;
+                </p>
+              )}
             </figcaption>
           </figure>
         ))}
@@ -81,7 +88,7 @@ export default function CoverSlider() {
         <div
           className="h-full bg-primary transition-[width] duration-500 ease-out"
           style={{
-            width: ((index + 1) / notebooks.length) * 100 + "%",
+            width: ((index + 1) / books.length) * 100 + "%",
           }}
         />
       </div>
@@ -89,7 +96,7 @@ export default function CoverSlider() {
       <div className="mt-6 flex items-center justify-between">
         {/* Dots */}
         <div className="flex gap-2">
-          {notebooks.map((book, i) => (
+          {books.map((book, i) => (
             <button
               key={book.slug}
               onClick={() => scrollTo(i)}

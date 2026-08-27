@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ShoppingBag, Eye } from "lucide-react";
-import { notebooks, formatINR } from "../data/products";
+import { formatINR } from "@/lib/formatters/currency";
 import Reveal from "./Reveal";
 import { useCart } from "../context/CartContext";
 
 const AUTOPLAY_MS = 4200;
 
-export default function FeaturedProducts() {
+export default function FeaturedProducts({ products = [] }) {
   const trackRef = useRef(null);
   const { add } = useCart();
   const [index, setIndex] = useState(0);
@@ -23,13 +23,15 @@ export default function FeaturedProducts() {
     if (!card) return;
 
     const step = card.offsetWidth + 24;
-    const target =
-      ((next % notebooks.length) + notebooks.length) % notebooks.length;
+    const count = products.length;
+    if (!count) return;
+
+    const target = ((next % count) + count) % count;
     const max = track.scrollWidth - track.clientWidth;
 
     track.scrollTo({ left: Math.min(target * step, max), behavior: "smooth" });
     setIndex(target);
-  }, []);
+  }, [products.length]);
 
   useEffect(() => {
     if (paused) return;
@@ -42,6 +44,10 @@ export default function FeaturedProducts() {
     }, AUTOPLAY_MS);
     return () => clearInterval(timer);
   }, [index, paused, scrollTo]);
+
+  // Nothing to slide through — drop the section rather than render an empty
+  // rail under a heading.
+  if (products.length === 0) return null;
 
   return (
     <section
@@ -84,10 +90,10 @@ export default function FeaturedProducts() {
           ref={trackRef}
           className="mt-14 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {notebooks.map((product, i) => {
-            const off = Math.round(
-              ((product.mrp - product.price) / product.mrp) * 100
-            );
+          {products.map((product, i) => {
+            const off = product.mrp
+              ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+              : 0;
 
             return (
               <Reveal
@@ -149,16 +155,18 @@ export default function FeaturedProducts() {
                       {product.name}
                     </h3>
                     <p className="mt-2 line-clamp-2 min-h-[42px] text-[13px] italic leading-[21px] text-muted">
-                      &ldquo;{product.quote}&rdquo;
+                      {product.quote ? `“${product.quote}”` : ""}
                     </p>
 
                     <div className="mt-3 flex items-baseline gap-2">
                       <span className="text-[17px] font-bold text-primary">
                         {formatINR(product.price)}
                       </span>
-                      <span className="text-[13px] text-muted line-through">
-                        {formatINR(product.mrp)}
-                      </span>
+                      {product.mrp > product.price && (
+                        <span className="text-[13px] text-muted line-through">
+                          {formatINR(product.mrp)}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </article>
@@ -171,7 +179,7 @@ export default function FeaturedProducts() {
         <div className="h-[2px] w-full bg-line">
           <div
             className="h-full bg-primary transition-[width] duration-500 ease-out"
-            style={{ width: ((index + 1) / notebooks.length) * 100 + "%" }}
+            style={{ width: ((index + 1) / products.length) * 100 + "%" }}
           />
         </div>
 

@@ -5,6 +5,10 @@ import Footer from "./components/Footer";
 import FloatingActions from "./components/FloatingActions";
 import ScrollToTop from "./components/ScrollToTop";
 import { CartProvider } from "./context/CartContext";
+import { CategoryProvider } from "./store/CategoryStore";
+import { AuthProvider } from "./store/AuthStore";
+import { WishlistProvider } from "./store/WishlistStore";
+import { getCategoriesSafe } from "@/lib/services/categoryService";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -19,7 +23,11 @@ export const metadata = {
     "ChoiceKraft is your trusted destination for affordable, high-quality stationery across India. Note books printed and bound in our own facility, plus pens, files and office essentials.",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // Fetched once here and handed to the client store, so the navbar search and
+  // the product browser sidebar share one list instead of each refetching it.
+  const categories = await getCategoriesSafe();
+
   return (
     <html
       lang="en"
@@ -33,13 +41,19 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
         className="flex min-h-full flex-col bg-white"
       >
-        <CartProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <FloatingActions />
-          <ScrollToTop />
-        </CartProvider>
+        <AuthProvider>
+          <WishlistProvider>
+            <CategoryProvider initialCategories={categories}>
+              <CartProvider>
+                <Navbar />
+                <main className="flex-1">{children}</main>
+                <Footer />
+                <FloatingActions />
+                <ScrollToTop />
+              </CartProvider>
+            </CategoryProvider>
+          </WishlistProvider>
+        </AuthProvider>
       </body>
     </html>
   );

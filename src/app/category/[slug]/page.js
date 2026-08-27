@@ -4,16 +4,15 @@ import { PackageSearch } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import Reveal from "../../components/Reveal";
 import ProductBrowser from "../../components/ProductBrowser";
-import { categories, findCategory } from "../../data/categories";
-import { productsInCategory } from "../../data/products";
-
-export function generateStaticParams() {
-  return categories.map((category) => ({ slug: category.slug }));
-}
+import {
+  getCategoriesSafe,
+  getCategoryBySlug,
+} from "@/lib/services/categoryService";
+import { getProductsByCategory } from "@/lib/services/productService";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const category = findCategory(slug);
+  const category = await getCategoryBySlug(slug);
 
   return {
     title: category
@@ -24,18 +23,25 @@ export async function generateMetadata({ params }) {
 
 export default async function CategoryPage({ params }) {
   const { slug } = await params;
-  const category = findCategory(slug);
+
+  const [category, categories, products] = await Promise.all([
+    getCategoryBySlug(slug),
+    getCategoriesSafe(),
+    getProductsByCategory(slug),
+  ]);
 
   if (!category) notFound();
-
-  const products = productsInCategory(slug);
 
   return (
     <>
       <PageHeader title={category.name} crumb={category.name.toUpperCase()} />
 
       <section className="mx-auto max-w-[1510px] px-6 py-16">
-        <p className="max-w-[560px] leading-7 text-muted">{category.tagline}</p>
+        {category.tagline && (
+          <p className="max-w-[560px] leading-7 text-muted">
+            {category.tagline}
+          </p>
+        )}
 
         {products.length > 0 ? null : (
           <Reveal>

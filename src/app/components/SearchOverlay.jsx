@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Search, X, CornerDownLeft } from "lucide-react";
-import { allProducts, formatINR } from "../data/products";
-import { categories } from "../data/categories";
+import { formatINR } from "@/lib/formatters/currency";
+import { useCategoryStore } from "../store/CategoryStore";
+import useProductSearch from "../hooks/useProductSearch";
 
 const MAX_RESULTS = 8;
 
 export default function SearchOverlay({ open, onClose }) {
+  const { categories } = useCategoryStore();
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
 
@@ -32,31 +34,16 @@ export default function SearchOverlay({ open, onClose }) {
 
   const term = query.trim().toLowerCase();
 
-  const { products, cats } = useMemo(() => {
-    if (term.length < 2) return { products: [], cats: [] };
+  // Products are searched by the backend — the catalogue is far too big to
+  // ship to the browser just to filter it here.
+  const { products } = useProductSearch(query, { limit: MAX_RESULTS });
 
-    const scored = allProducts
-      .map((p) => {
-        const name = p.name.toLowerCase();
-        const type = (p.type || "").toLowerCase();
-        const cat = p.category.replace(/-/g, " ");
-        let score = 0;
-        if (name.startsWith(term)) score = 4;
-        else if (name.includes(term)) score = 3;
-        else if (type.includes(term)) score = 2;
-        else if (cat.includes(term)) score = 1;
-        return { p, score };
-      })
-      .filter((r) => r.score > 0)
-      .sort((a, b) => b.score - a.score);
-
-    return {
-      products: scored.slice(0, MAX_RESULTS).map((r) => r.p),
-      cats: categories
-        .filter((c) => c.name.toLowerCase().includes(term))
-        .slice(0, 4),
-    };
-  }, [term]);
+  const cats = useMemo(() => {
+    if (term.length < 2) return [];
+    return categories
+      .filter((c) => c.name.toLowerCase().includes(term))
+      .slice(0, 4);
+  }, [term, categories]);
 
   const close = () => {
     setQuery("");

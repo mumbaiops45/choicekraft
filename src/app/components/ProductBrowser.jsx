@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { LayoutGrid, List, SlidersHorizontal, X } from "lucide-react";
-import { categories } from "../data/categories";
-import { formatINR } from "../data/products";
+import { formatINR } from "@/lib/formatters/currency";
 import ProductCard from "./ProductCard";
 import { useCart } from "../context/CartContext";
+import { useCategoryStore } from "../store/CategoryStore";
 import Reveal from "./Reveal";
 
 const priceBands = [
@@ -36,6 +36,7 @@ const discountOf = (p) =>
 
 export default function ProductBrowser({ products, activeCategory }) {
   const { add } = useCart();
+  const { categories } = useCategoryStore();
   const [bands, setBands] = useState([]);
   const [kindFilter, setKindFilter] = useState([]);
   const [onlyOffers, setOnlyOffers] = useState(false);

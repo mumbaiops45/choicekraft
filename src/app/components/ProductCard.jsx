@@ -1,10 +1,17 @@
 "use client";
 
-import { formatINR } from "../data/products";
+import { Heart } from "lucide-react";
+import { formatINR } from "@/lib/formatters/currency";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../store/AuthStore";
+import { useWishlist } from "../store/WishlistStore";
 
 export default function ProductCard({ product }) {
   const { add } = useCart();
+  const { isAuthenticated } = useAuth();
+  const wishlist = useWishlist();
+
+  const saved = wishlist.has(product.id);
   const off = product.mrp
     ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
     : 0;
@@ -25,6 +32,27 @@ export default function ProductCard({ product }) {
             (isBook ? "p-2" : "p-5")
           }
         />
+
+        {/* Wishlist heart. Only for signed-in shoppers — there is nowhere to
+            save a product to otherwise, and anonymous visitors keep the card
+            exactly as it was. */}
+        {isAuthenticated && (
+          <button
+            onClick={() => wishlist.toggle(product)}
+            disabled={wishlist.isPending(product.id)}
+            aria-label={
+              (saved ? "Remove " : "Save ") + product.name + " to wishlist"
+            }
+            aria-pressed={saved}
+            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-ink shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-colors hover:text-primary disabled:opacity-50"
+          >
+            <Heart
+              size={16}
+              strokeWidth={2}
+              className={saved ? "fill-primary text-primary" : ""}
+            />
+          </button>
+        )}
 
         {/* Badges stack down the left — book covers carry the printed
             ChoiceKraft logo in their top-right corner. */}

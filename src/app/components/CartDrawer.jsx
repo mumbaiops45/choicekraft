@@ -2,12 +2,12 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, AlertCircle } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { formatINR } from "../data/products";
+import { formatINR } from "@/lib/formatters/currency";
 
 export default function CartDrawer() {
-  const { items, count, subtotal, saved, open, setOpen, setQty, remove } =
+  const { items, count, subtotal, saved, open, setOpen, setQty, remove, error, clearError } =
     useCart();
 
   // Lock background scroll and close on Escape while the drawer is open
@@ -64,6 +64,29 @@ export default function CartDrawer() {
             <X size={18} strokeWidth={2} />
           </button>
         </header>
+
+        {/* Stock limits and other server cart refusals ("Only 3 units
+            available") surface here rather than failing silently. */}
+        {error && (
+          <div
+            role="status"
+            className="flex items-start gap-3 border-b border-line bg-surface px-6 py-3.5"
+          >
+            <AlertCircle
+              size={16}
+              strokeWidth={2}
+              className="mt-0.5 shrink-0 text-primary"
+            />
+            <p className="flex-1 text-[13px] leading-6 text-ink-soft">{error}</p>
+            <button
+              onClick={clearError}
+              aria-label="Dismiss message"
+              className="shrink-0 text-muted transition-colors hover:text-primary"
+            >
+              <X size={15} strokeWidth={2} />
+            </button>
+          </div>
+        )}
 
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
@@ -180,12 +203,14 @@ export default function CartDrawer() {
                     " more for free delivery."}
               </p>
 
-              <button
+              <Link
+                href="/checkout"
+                onClick={() => setOpen(false)}
                 tabIndex={open ? 0 : -1}
-                className="mt-5 w-full bg-primary py-4 text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover"
+                className="mt-5 block w-full bg-primary py-4 text-center text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover"
               >
                 CHECKOUT
-              </button>
+              </Link>
 
               <Link
                 href="/products"
