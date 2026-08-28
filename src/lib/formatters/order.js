@@ -83,6 +83,8 @@ export function formatOrder(raw) {
       PAYMENT_METHOD_LABELS.online,
     paidAt: raw.paidAt || null,
     cancelReason: raw.cancelReason || "",
+    cancelReasonCode: raw.cancelReasonCode || "",
+    cancelledBy: raw.cancelledBy || "",
     canCancel: CUSTOMER_CANCELLABLE.includes(raw.orderStatus),
     razorpayOrderId: raw.razorpayOrderId || "",
     razorpayPaymentId: raw.razorpayPaymentId || "",
@@ -98,6 +100,23 @@ export function formatOrder(raw) {
 export function formatOrders(list) {
   if (!Array.isArray(list)) return [];
   return list.map(formatOrder).filter(Boolean);
+}
+
+/**
+ * The cancellation dropdown, as GET /orders/cancel-reasons sends it.
+ *
+ * The backend rejects any code outside this list, so the list is never
+ * hardcoded here — an empty array means the reasons could not be loaded and
+ * the cancel form should say so rather than offer choices that will 400.
+ */
+export function formatCancelReasons(list) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((raw) => ({
+      code: raw?.code || "",
+      label: raw?.label || "",
+    }))
+    .filter((reason) => reason.code && reason.label);
 }
 
 /** The /checkout preview: priced lines, the chosen address, and totals. */

@@ -175,14 +175,6 @@ export default function FeaturedProducts({ products = [] }) {
           })}
         </div>
 
-        {/* Autoplay progress */}
-        <div className="h-[2px] w-full bg-line">
-          <div
-            className="h-full bg-primary transition-[width] duration-500 ease-out"
-            style={{ width: ((index + 1) / products.length) * 100 + "%" }}
-          />
-        </div>
-
         <Reveal className="mt-12 text-center">
           <Link
             href="/notebooks"

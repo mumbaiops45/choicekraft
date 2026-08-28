@@ -2,10 +2,20 @@
 // Policy content.
 //
 // IMPORTANT: these are working drafts written to match how the site describes
-// the business (7-day returns, free shipping over ₹1,999, GST invoicing,
-// Maharashtra base). They are NOT legal advice. Have them reviewed, and check
-// every figure against your actual operations before launch.
+// the business (7-day returns, GST invoicing, Maharashtra base). They are NOT
+// legal advice. Have them reviewed, and check every figure against your actual
+// operations before launch.
+//
+// Delivery charges quoted below come from src/lib/shipping.js, which mirrors
+// what the backend actually charges. Never retype them — this file said
+// ₹1,999 in the FAQ and ₹499 in the shipping policy while the server was
+// charging on ₹500, so all three disagreed.
 // ---------------------------------------------------------------------------
+
+import {
+  FREE_SHIPPING_THRESHOLD,
+  SHIPPING_FLAT,
+} from "@/lib/shipping";
 
 export const LAST_UPDATED = "24 August 2026";
 
@@ -43,7 +53,7 @@ export const faqs = [
     items: [
       {
         q: "How much does delivery cost?",
-        a: "Delivery is free on orders over ₹1,999. Below that, a flat shipping charge is shown at checkout before you pay.",
+        a: `Delivery is free on orders of ₹${FREE_SHIPPING_THRESHOLD} and above. Below that, a flat ₹${SHIPPING_FLAT} shipping charge is shown at checkout before you pay.`,
       },
       {
         q: "When will my order ship?",
@@ -282,8 +292,8 @@ export const policies = {
       {
         heading: "Shipping charges",
         list: [
-          "A standard shipping fee of ₹49 applies to orders below ₹499.",
-          "Free shipping is offered on orders with a cart value of ₹499 and above.",
+          `A standard shipping fee of ₹${SHIPPING_FLAT} applies to orders below ₹${FREE_SHIPPING_THRESHOLD}.`,
+          `Free shipping is offered on orders with a cart value of ₹${FREE_SHIPPING_THRESHOLD} and above.`,
           "Shipping charges, if applicable, will be displayed at checkout before payment confirmation.",
         ],
       },

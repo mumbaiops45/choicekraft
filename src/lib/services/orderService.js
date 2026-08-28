@@ -5,7 +5,11 @@
 
 import { api, ApiError } from "@/lib/api/client";
 import { ENDPOINTS } from "@/lib/api/endpoints";
-import { formatOrder, formatOrders } from "@/lib/formatters/order";
+import {
+  formatCancelReasons,
+  formatOrder,
+  formatOrders,
+} from "@/lib/formatters/order";
 
 const authed = (token, options = {}) => ({
   cache: "no-store",
@@ -61,17 +65,47 @@ export async function placeCodOrder(token, addressId, options = {}) {
 }
 
 /**
+ * The fixed list of cancellation reasons, straight from the backend.
+ *
+ * Kept server-side so the codes the dropdown offers are exactly the ones
+ * PATCH /orders/:id/cancel will accept — a list copied into the frontend
+ * drifts the moment either side adds a reason.
+ *
+ * @returns {Promise<{code: string, label: string}[]>}
+ */
+export async function getCancelReasons(token, options = {}) {
+  if (!token) return [];
+  const response = await api.get(
+    ENDPOINTS.orders.cancelReasons,
+    authed(token, options)
+  );
+  return formatCancelReasons(response?.data?.cancelReasons);
+}
+
+/**
  * Cancels an order and returns its stock to inventory.
  *
  * Only allowed before dispatch — the backend answers 409 for anything already
  * shipped, which is a support matter rather than a self-service one.
  *
+ * `reasonCode` is required and must be one of the codes from
+ * getCancelReasons(); "other" additionally needs at least three characters of
+ * explanation. Anything else comes back as a 400.
+ *
+ * @param {string} token
+ * @param {string} id
+ * @param {{reasonCode: string, reason?: string}} choice
  * @returns {Promise<{order: object|null, message: string}>}
  */
-export async function cancelOrder(token, id, reason, options = {}) {
+export async function cancelOrder(token, id, choice, options = {}) {
+  const { reasonCode, reason } = choice || {};
+
   const response = await api.patch(
     ENDPOINTS.orders.cancel(id),
-    { reason: (reason || "").trim() || undefined },
+    {
+      reasonCode,
+      reason: (reason || "").trim() || undefined,
+    },
     authed(token, options)
   );
   return {
@@ -84,6 +118,7 @@ export const orderService = {
   getMyOrders,
   getMyOrder,
   placeCodOrder,
+  getCancelReasons,
   cancelOrder,
 };
 export default orderService;

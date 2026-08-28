@@ -75,6 +75,9 @@ export const ENDPOINTS = {
     // Cash on delivery places the order directly: POST /orders.
     // The online path goes through POST /payment/create-order instead.
     cod: "/orders",
+    // Declared before /orders/:id on the server, so it is a real route and
+    // not an order id.
+    cancelReasons: "/orders/cancel-reasons",
     cancel: (id) => `/orders/${encodeURIComponent(id)}/cancel`,
     byId: (id) => `/orders/${encodeURIComponent(id)}`,
   },

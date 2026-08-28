@@ -56,12 +56,19 @@ export function AuthProvider({ children }) {
   // signed-out panel at someone who is actually signed in.
   const [restoring, setRestoring] = useState(true);
   const [error, setError] = useState("");
+  // Set when a live session dies mid-use, so the panel can explain itself
+  // rather than just appearing for no visible reason.
+  const [expiredMessage, setExpiredMessage] = useState("");
   // The sign-in panel lives in the navbar, but pages need to open it too —
   // a "please sign in" screen with no way to sign in is a dead end.
   const [accountOpen, setAccountOpen] = useState(false);
 
   // Read by callers that need the freshest token without re-rendering on it.
   const tokenRef = useRef("");
+  // What to do once someone signs in, set by whoever opened the panel. The
+  // cart uses it to carry a guest straight on to checkout instead of leaving
+  // them on whatever page they were browsing.
+  const afterSignIn = useRef(null);
   const applyToken = useCallback((token) => {
     tokenRef.current = token || "";
     setAccessToken(token || "");
@@ -123,6 +130,12 @@ export function AuthProvider({ children }) {
         const session = await run();
         applyToken(session.accessToken);
         setUser(session.user);
+        setExpiredMessage("");
+
+        const next = afterSignIn.current;
+        afterSignIn.current = null;
+        if (next) next(session.user);
+
         return { ok: true, user: session.user, message: session.message };
       } catch (err) {
         const message = err?.message || "Something went wrong. Please try again.";
@@ -143,6 +156,44 @@ export function AuthProvider({ children }) {
     [startSession]
   );
 
+  /**
+   * Opens the account drawer.
+   *
+   * @param {(user: object) => void} [onSignedIn] run once, if and when this
+   *        visit ends in a successful sign in or registration.
+   */
+  const openAccount = useCallback((onSignedIn) => {
+    afterSignIn.current =
+      typeof onSignedIn === "function" ? onSignedIn : null;
+    setAccountOpen(true);
+  }, []);
+
+  const closeAccount = useCallback(() => {
+    // Closing the panel abandons whatever was meant to happen next, and
+    // dismisses the expiry notice along with it.
+    afterSignIn.current = null;
+    setExpiredMessage("");
+    setAccountOpen(false);
+  }, []);
+
+  /**
+   * Ends a session that died under the user — the access token expired and
+   * the refresh cookie could not replace it.
+   *
+   * Rather than leave them on a page whose data silently stopped loading,
+   * open the sign in panel and say why. Auth-gated pages watch
+   * isAuthenticated, so they swap to their own "please sign in" view at the
+   * same moment.
+   */
+  const endExpiredSession = useCallback(() => {
+    applyToken("");
+    setUser(null);
+    setError("");
+    afterSignIn.current = null;
+    setExpiredMessage("Your session has expired. Please sign in again.");
+    setAccountOpen(true);
+  }, [applyToken]);
+
   const logout = useCallback(async () => {
     try {
       await authService.logout();
@@ -153,6 +204,7 @@ export function AuthProvider({ children }) {
     applyToken("");
     setUser(null);
     setError("");
+    setExpiredMessage("");
   }, [applyToken]);
 
   /**
@@ -195,8 +247,8 @@ export function AuthProvider({ children }) {
 
         if (!fresh) {
           // The refresh cookie is gone or revoked too — this session is over.
-          applyToken("");
-          setUser(null);
+          // Send them to sign in instead of failing quietly.
+          endExpiredSession();
           throw error;
         }
 
@@ -204,8 +256,29 @@ export function AuthProvider({ children }) {
         return run(fresh);
       }
     },
-    [applyToken]
+    [applyToken, endExpiredSession]
   );
+
+  /**
+   * Revokes every refresh token this user has, not just this device's.
+   *
+   * The backend clears the cookie as part of it, so the local session is over
+   * whether or not the call succeeds — drop it either way rather than leave a
+   * token behind that can no longer be refreshed.
+   */
+  const logoutEverywhere = useCallback(async () => {
+    let message = "";
+    try {
+      const result = await authedCall((token) => authService.logoutAll(token));
+      message = result?.message || "";
+    } catch {
+      // Already revoked, or the network is down. Nothing to recover.
+    }
+    applyToken("");
+    setUser(null);
+    setError("");
+    return { ok: true, message: message || "Signed out on every device." };
+  }, [authedCall, applyToken]);
 
   /** Re-reads the signed-in user, e.g. after a profile update. */
   const reloadUser = useCallback(async () => {
@@ -228,14 +301,17 @@ export function AuthProvider({ children }) {
       restoring,
       error,
       clearError: () => setError(""),
+      /** Non-empty only while an expired session is waiting to be explained. */
+      sessionExpired: expiredMessage,
       login,
       register,
       logout,
+      logoutEverywhere,
       reloadUser,
       authedCall,
       accountOpen,
-      openAccount: () => setAccountOpen(true),
-      closeAccount: () => setAccountOpen(false),
+      openAccount,
+      closeAccount,
       /** Current token without subscribing to it. */
       getToken: () => tokenRef.current,
     }),
@@ -244,10 +320,14 @@ export function AuthProvider({ children }) {
       accessToken,
       restoring,
       error,
+      expiredMessage,
       accountOpen,
+      openAccount,
+      closeAccount,
       login,
       register,
       logout,
+      logoutEverywhere,
       reloadUser,
       authedCall,
     ]

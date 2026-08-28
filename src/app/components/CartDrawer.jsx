@@ -2,13 +2,48 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { X, Minus, Plus, Trash2, ShoppingBag, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  X,
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  AlertCircle,
+  Lock,
+} from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../store/AuthStore";
 import { formatINR } from "@/lib/formatters/currency";
+import { amountToFreeShipping } from "@/lib/shipping";
 
 export default function CartDrawer() {
   const { items, count, subtotal, saved, open, setOpen, setQty, remove, error, clearError } =
     useCart();
+  const { isAuthenticated, restoring, openAccount, closeAccount } = useAuth();
+  const router = useRouter();
+
+  // Checking out needs an account: every route it touches (/checkout,
+  // /orders, /payment) is behind auth on the server, so a guest who follows
+  // the link only lands on a sign-in wall. Ask here instead, and carry them
+  // on to checkout once they are in.
+  //
+  // While the session is still being restored we let the link through rather
+  // than risk asking someone who is already signed in to sign in again.
+  const needsSignIn = !restoring && !isAuthenticated;
+
+  const goToCheckout = (event) => {
+    setOpen(false);
+    if (!needsSignIn) return; // the Link navigates as usual
+
+    event.preventDefault();
+    openAccount(() => {
+      closeAccount();
+      router.push("/checkout");
+    });
+  };
+
+  const toFreeShipping = amountToFreeShipping(subtotal);
 
   // Lock background scroll and close on Escape while the drawer is open
   useEffect(() => {
@@ -196,21 +231,29 @@ export default function CartDrawer() {
               </p>
 
               <p className="mt-1.5 text-[12px] leading-5 text-muted">
-                {subtotal >= 1999
+                {toFreeShipping === 0
                   ? "Your order qualifies for free delivery."
                   : "Add " +
-                    formatINR(1999 - subtotal) +
+                    formatINR(toFreeShipping) +
                     " more for free delivery."}
               </p>
 
               <Link
                 href="/checkout"
-                onClick={() => setOpen(false)}
+                onClick={goToCheckout}
                 tabIndex={open ? 0 : -1}
-                className="mt-5 block w-full bg-primary py-4 text-center text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover"
+                className="mt-5 flex w-full items-center justify-center gap-2 bg-primary py-4 text-center text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover"
               >
-                CHECKOUT
+                {needsSignIn && <Lock size={14} strokeWidth={2} />}
+                {needsSignIn ? "SIGN IN TO CHECK OUT" : "CHECKOUT"}
               </Link>
+
+              {needsSignIn && (
+                <p className="mt-2 text-center text-[12px] leading-5 text-muted">
+                  Your basket is saved — it moves to your account when you sign
+                  in.
+                </p>
+              )}
 
               <Link
                 href="/products"

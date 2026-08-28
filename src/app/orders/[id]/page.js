@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import { useAuth } from "../../store/AuthStore";
-import { cancelOrder, getMyOrder } from "@/lib/services/orderService";
+import {
+  cancelOrder,
+  getCancelReasons,
+  getMyOrder,
+} from "@/lib/services/orderService";
 import { formatINR } from "@/lib/formatters/currency";
 
 const STEPS = [
@@ -45,6 +49,14 @@ export default function OrderDetailPage({ params }) {
   const [cancelling, setCancelling] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
+  // The cancellation dropdown. Fetched only when the customer opens the form,
+  // since most visits to this page are just checking on a delivery.
+  const [reasons, setReasons] = useState([]);
+  const [reasonsLoading, setReasonsLoading] = useState(false);
+  const [reasonCode, setReasonCode] = useState("");
+  const [note, setNote] = useState("");
+  const [cancelError, setCancelError] = useState("");
+
   useEffect(() => {
     if (restoring) return;
     if (!isAuthenticated) {
@@ -69,18 +81,62 @@ export default function OrderDetailPage({ params }) {
     };
   }, [restoring, isAuthenticated, authedCall, id]);
 
-  /** Cancelling returns the stock to inventory, server-side and atomically. */
+  /** Opens the cancel form and pulls the reasons the backend will accept. */
+  const startCancel = async () => {
+    setConfirming(true);
+    setCancelError("");
+    if (reasons.length || reasonsLoading) return;
+
+    setReasonsLoading(true);
+    try {
+      setReasons(await authedCall((t) => getCancelReasons(t)));
+    } catch {
+      setCancelError(
+        "Could not load the cancellation reasons. Please try again."
+      );
+    } finally {
+      setReasonsLoading(false);
+    }
+  };
+
+  const closeCancel = () => {
+    setConfirming(false);
+    setCancelError("");
+  };
+
+  /**
+   * Cancelling returns the stock to inventory, server-side and atomically.
+   *
+   * The same two rules the backend enforces are checked here first, so an
+   * obvious mistake costs a keystroke rather than a round trip.
+   */
   const cancel = async () => {
     if (cancelling) return;
+
+    if (!reasonCode) {
+      setCancelError("Please choose a reason for cancelling.");
+      return;
+    }
+
+    if (reasonCode === "other" && note.trim().length < 3) {
+      setCancelError(
+        "Please tell us a little more about why you are cancelling."
+      );
+      return;
+    }
+
     setCancelling(true);
+    setCancelError("");
     setError("");
     try {
-      await authedCall((t) => cancelOrder(t, id, "Cancelled by customer"));
+      await authedCall((t) => cancelOrder(t, id, { reasonCode, reason: note }));
       const refreshed = await authedCall((t) => getMyOrder(t, id));
       setOrder(refreshed);
       setConfirming(false);
+      setReasonCode("");
+      setNote("");
     } catch (err) {
-      setError(err?.message || "Could not cancel this order.");
+      setCancelError(err?.message || "Could not cancel this order.");
     } finally {
       setCancelling(false);
     }
@@ -169,9 +225,10 @@ export default function OrderDetailPage({ params }) {
                 Placed {asDateTime(order.createdAt)} ·{" "}
                 {order.paymentMethodLabel} · {order.paymentStatusLabel}
               </p>
-              {order.cancelReason && (
+              {cancelled && order.cancelReason && (
                 <p className="mt-1 text-[13px] text-muted">
                   Reason: {order.cancelReason}
+                  {order.cancelledBy === "admin" && " (cancelled by our team)"}
                 </p>
               )}
             </div>
@@ -203,31 +260,83 @@ export default function OrderDetailPage({ params }) {
             <div className="mt-5 border-t border-line pt-5">
               {!confirming ? (
                 <button
-                  onClick={() => setConfirming(true)}
+                  onClick={startCancel}
                   className="flex items-center gap-2 border border-line px-5 py-2.5 text-[12px] font-semibold tracking-[1px] text-ink-soft transition-colors hover:border-primary hover:text-primary"
                 >
                   <XCircle size={15} strokeWidth={1.8} />
                   CANCEL ORDER
                 </button>
               ) : (
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-[13px] text-ink-soft">
+                <div className="max-w-[460px]">
+                  <p className="text-[13px] leading-6 text-ink-soft">
                     Cancel this order? The items go back into stock.
                   </p>
-                  <button
-                    onClick={cancel}
-                    disabled={cancelling}
-                    className="bg-primary px-5 py-2.5 text-[12px] font-semibold tracking-[1px] text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
+
+                  <label
+                    htmlFor="cancel-reason"
+                    className="mt-4 block text-[12px] font-semibold uppercase tracking-[1px] text-ink"
                   >
-                    {cancelling ? "CANCELLING…" : "YES, CANCEL"}
-                  </button>
-                  <button
-                    onClick={() => setConfirming(false)}
-                    disabled={cancelling}
-                    className="border border-line px-5 py-2.5 text-[12px] font-semibold tracking-[1px] text-ink-soft transition-colors hover:border-primary hover:text-primary"
+                    Why are you cancelling?
+                  </label>
+                  <select
+                    id="cancel-reason"
+                    value={reasonCode}
+                    onChange={(e) => {
+                      setReasonCode(e.target.value);
+                      setCancelError("");
+                    }}
+                    disabled={cancelling || reasonsLoading || !reasons.length}
+                    className="mt-2 w-full border border-line bg-white px-3.5 py-3 text-[14px] text-ink outline-none transition-colors focus:border-primary disabled:opacity-60"
                   >
-                    KEEP IT
-                  </button>
+                    <option value="">
+                      {reasonsLoading ? "Loading reasons…" : "Select a reason"}
+                    </option>
+                    {reasons.map((reason) => (
+                      <option key={reason.code} value={reason.code}>
+                        {reason.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* "Something else" tells the shop nothing on its own, so
+                      the backend insists on a few words with it. */}
+                  {reasonCode === "other" && (
+                    <textarea
+                      value={note}
+                      onChange={(e) => {
+                        setNote(e.target.value);
+                        setCancelError("");
+                      }}
+                      disabled={cancelling}
+                      rows={3}
+                      maxLength={300}
+                      placeholder="Tell us a little more…"
+                      className="mt-3 w-full resize-none border border-line bg-white px-3.5 py-3 text-[14px] leading-6 text-ink outline-none transition-colors focus:border-primary disabled:opacity-60"
+                    />
+                  )}
+
+                  {cancelError && (
+                    <p className="mt-3 border-l-[3px] border-primary bg-surface p-3 text-[13px] leading-6 text-ink-soft">
+                      {cancelError}
+                    </p>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={cancel}
+                      disabled={cancelling || !reasons.length}
+                      className="bg-primary px-5 py-2.5 text-[12px] font-semibold tracking-[1px] text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
+                    >
+                      {cancelling ? "CANCELLING…" : "YES, CANCEL"}
+                    </button>
+                    <button
+                      onClick={closeCancel}
+                      disabled={cancelling}
+                      className="border border-line px-5 py-2.5 text-[12px] font-semibold tracking-[1px] text-ink-soft transition-colors hover:border-primary hover:text-primary"
+                    >
+                      KEEP IT
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
