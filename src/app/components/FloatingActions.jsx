@@ -7,8 +7,13 @@ import useFooterOffset from "../hooks/useFooterOffset";
 const PHONE = "+917400181786";
 
 /**
- * Floating contact stack pinned to the right edge, above the back-to-top
- * button. Sitewide, so a customer can reach you from any page.
+ * Floating contact stack pinned to the right edge. Sitewide, so a customer can
+ * reach you from any page.
+ *
+ * On desktop it sits above the floating back-to-top button. That button is
+ * hidden below lg, so here the stack drops into the corner it vacates and the
+ * buttons shrink to 44px — still a comfortable tap target, and a much smaller
+ * bite out of a phone screen.
  */
 export default function FloatingActions() {
   const footerOffset = useFooterOffset();
@@ -35,7 +40,7 @@ export default function FloatingActions() {
   return (
     <div
       style={{ marginBottom: footerOffset }}
-      className="fixed bottom-28 right-5 z-50 flex flex-col gap-3 lg:bottom-32 lg:right-6"
+      className="fixed bottom-6 right-4 z-50 flex flex-col gap-2.5 lg:bottom-32 lg:right-6 lg:gap-3"
     >
       {actions.map(({ label, href, external, Icon, className }) => (
         <a
@@ -47,11 +52,11 @@ export default function FloatingActions() {
             ? { target: "_blank", rel: "noopener noreferrer" }
             : {})}
           className={
-            "group/fab relative flex h-[52px] w-[52px] items-center justify-center rounded-full text-white shadow-[0_6px_20px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-0.5 lg:h-[56px] lg:w-[56px] " +
+            "group/fab relative flex h-11 w-11 items-center justify-center rounded-full text-white shadow-[0_6px_20px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-0.5 sm:h-[52px] sm:w-[52px] lg:h-[56px] lg:w-[56px] " +
             className
           }
         >
-          <Icon size={24} strokeWidth={2} className="h-6 w-6" />
+          <Icon size={24} strokeWidth={2} className="h-5 w-5 sm:h-6 sm:w-6" />
 
           {/* Label slides out on hover */}
           <span

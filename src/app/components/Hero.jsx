@@ -5,8 +5,13 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // The banner artwork already has its headline, copy and SHOP NOW button baked
-// into the JPEG, so the slider only cross-fades images — no text overlay. The
-// native ratio (1903x928) is preserved so that baked-in text is never cropped.
+// into the JPEG, so the slider only cross-fades images — no text overlay.
+//
+// That is also why the frame keeps the artwork's native 1903x928 ratio at
+// EVERY width rather than a fixed height. A fixed height plus object-cover
+// crops the sides, and on a 360px phone that threw away 41% of the banner
+// width — roughly a fifth off each edge, taking the headline and the SHOP NOW
+// button with it. Height simply follows the viewport instead.
 const slides = [
   { src: "/images/main-banner-1.jpg", alt: "Up to 85% off stationery", href: "/stationery" },
   { src: "/images/main-banner-2.jpg", alt: "Up to 55% off desk supplies", href: "/products" },
@@ -36,7 +41,7 @@ export default function Hero() {
       onMouseLeave={() => setPaused(false)}
       className="group relative w-full overflow-hidden bg-ink"
     >
-      <div className="relative h-[300px] w-full sm:h-[420px] md:h-[520px] lg:aspect-[1903/928] lg:h-auto">
+      <div className="relative aspect-[1903/928] w-full">
         {slides.map((slide, i) => (
           <Link
             key={slide.src}
@@ -52,10 +57,14 @@ export default function Hero() {
               src={slide.src}
               alt={slide.alt}
               loading={i === 0 ? "eager" : "lazy"}
+              // The slow zoom trims ~2.5% off each edge while it runs. That is
+              // fine on a wide desktop banner, but on a phone the frame is
+              // only ~175px tall and the baked-in text has no margin to spare,
+              // so the effect is desktop-only.
               className={
                 "h-full w-full object-cover object-center transition-transform ease-out " +
                 (i === index
-                  ? "scale-105 duration-[6000ms]"
+                  ? "duration-[6000ms] lg:scale-105"
                   : "scale-100 duration-0")
               }
             />

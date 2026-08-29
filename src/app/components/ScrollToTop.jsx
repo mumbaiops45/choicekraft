@@ -9,6 +9,12 @@ import { TopArrowMark, scrollToTop } from "./BackToTopButton";
  * Floating back-to-top button. Appears once the page has been scrolled a
  * screenful or so, and steps aside when the footer — which carries its own
  * back-to-top button — comes into view, so only one is ever on screen.
+ *
+ * Desktop only. On a phone this stacked with the WhatsApp and call buttons
+ * into a permanent 200px-tall column down the right edge, sitting over card
+ * buttons and quantity steppers. Flick-to-scroll makes it the least useful of
+ * the three, and the footer keeps its own back-to-top for anyone who wants
+ * one.
  */
 export default function ScrollToTop() {
   const [scrolled, setScrolled] = useState(false);
@@ -26,7 +32,7 @@ export default function ScrollToTop() {
   return (
     <div
       className={
-        "group fixed bottom-6 right-6 z-50 flex items-center gap-3 transition-all duration-300 " +
+        "group fixed bottom-6 right-6 z-50 hidden items-center gap-3 transition-all duration-300 lg:flex " +
         (shown
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none translate-y-4 opacity-0")
