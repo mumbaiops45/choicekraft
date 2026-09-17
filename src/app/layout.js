@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import FloatingActions from "./components/FloatingActions";
 import ScrollToTop from "./components/ScrollToTop";
+import WelcomeGate from "./components/WelcomeGate";
 import { CartProvider } from "./context/CartContext";
 import { CategoryProvider } from "./store/CategoryStore";
 import { AuthProvider } from "./store/AuthStore";
@@ -42,6 +43,7 @@ export default async function RootLayout({ children }) {
         className="flex min-h-full flex-col bg-white"
       >
         <AuthProvider>
+          <WelcomeGate />
           <WishlistProvider>
             <CategoryProvider initialCategories={categories}>
               <CartProvider>

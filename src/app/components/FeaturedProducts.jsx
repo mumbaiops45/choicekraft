@@ -138,7 +138,7 @@ export default function FeaturedProducts({ products = [] }) {
                         ADD
                       </button>
                       <Link
-                        href="/notebooks"
+                        href={`/products/${product.slug}`}
                         aria-label={"View " + product.name}
                         className="flex w-11 items-center justify-center border border-line text-ink transition-colors hover:border-primary hover:text-primary"
                       >

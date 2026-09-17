@@ -47,7 +47,7 @@ const socials = [
   },
   {
     name: "Instagram",
-    href: "https://instagram.com/",
+    href: "https://www.instagram.com/Choicekraft",
     Icon: InstagramIcon,
     hover: "hover:bg-[#E1306C] hover:border-[#E1306C]",
   },

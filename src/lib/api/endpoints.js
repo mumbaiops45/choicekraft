@@ -18,6 +18,20 @@ export const ENDPOINTS = {
     remove: (id) => `/categories/${encodeURIComponent(id)}`,
   },
 
+  banners: {
+    // Public — ?type=homepage | offer
+    list: "/banners",
+
+    // Admin (protect + adminOnly)
+    adminList: "/banners/admin/all",
+    reorder: "/banners/admin/reorder",
+    byId: (id) => `/banners/${encodeURIComponent(id)}`,
+    create: "/banners",
+    update: (id) => `/banners/${encodeURIComponent(id)}`,
+    status: (id) => `/banners/${encodeURIComponent(id)}/status`,
+    remove: (id) => `/banners/${encodeURIComponent(id)}`,
+  },
+
   products: {
     // Public
     list: "/products",

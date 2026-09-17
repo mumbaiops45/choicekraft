@@ -93,7 +93,11 @@ export default function Navbar() {
         "z-50 w-full transition-all duration-300 " +
         (scrolled
           ? "fixed inset-x-0 top-0 bg-white shadow-[0_2px_18px_rgba(0,0,0,0.12)]"
-          : "absolute inset-x-0 top-0 lg:top-[42px]")
+          // The offer ticker above <main> is ~47.5px tall — this clears it
+          // with a visible gap instead of the two bars touching (or, on
+          // mobile before this, the navbar sitting at top-0 and hiding the
+          // ticker behind it entirely).
+          : "absolute inset-x-0 top-16")
       }
     >
       <div

@@ -305,7 +305,10 @@ export default function ProductBrowser({ products, activeCategory }) {
               {visible.map((product, i) => (
                 <Reveal key={product.slug} delay={(i % 4) * 50}>
                   <article className="group flex flex-col gap-6 border border-line bg-white p-5 transition-shadow hover:shadow-[0_14px_34px_rgba(0,0,0,0.10)] sm:flex-row">
-                    <div className="w-full shrink-0 overflow-hidden bg-white sm:w-[190px]">
+                    <Link
+                      href={`/products/${product.slug}`}
+                      className="w-full shrink-0 overflow-hidden bg-white sm:w-[190px]"
+                    >
                       <img
                         src={product.image}
                         alt={product.name}
@@ -317,15 +320,17 @@ export default function ProductBrowser({ products, activeCategory }) {
                             : "aspect-square object-contain p-3")
                         }
                       />
-                    </div>
+                    </Link>
 
                     <div className="flex flex-1 flex-col">
                       <p className="text-[11px] font-medium uppercase tracking-[1.5px] text-muted">
                         {product.type}
                       </p>
-                      <h3 className="mt-1.5 text-[19px] font-bold text-ink transition-colors group-hover:text-primary">
-                        {product.name}
-                      </h3>
+                      <Link href={`/products/${product.slug}`}>
+                        <h3 className="mt-1.5 text-[19px] font-bold text-ink transition-colors group-hover:text-primary">
+                          {product.name}
+                        </h3>
+                      </Link>
                       {product.quote && (
                         <p className="mt-2 text-[13px] italic leading-6 text-muted">
                           &ldquo;{product.quote}&rdquo;

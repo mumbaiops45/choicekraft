@@ -144,6 +144,24 @@ export async function getProductById(id, options = {}) {
   }
 }
 
+/** A raw Mongo ObjectId — 24 hex characters. */
+const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
+
+/**
+ * The `/products/[slug]` route accepts either a real slug or, until banners
+ * carry a populated product, a bare product id in its place (see
+ * formatBanner's `href`). A slug never happens to be 24 hex characters, so
+ * trying the id lookup only when it looks like one costs nothing extra for
+ * an ordinary slug.
+ * @returns {Promise<object|null>}
+ */
+export async function getProductBySlugOrId(value, options = {}) {
+  if (!value) return null;
+  const bySlug = await getProductBySlug(value, options);
+  if (bySlug) return bySlug;
+  return OBJECT_ID_RE.test(value) ? getProductById(value, options) : null;
+}
+
 // ======================================================
 // ADMIN — every call needs a bearer token
 // ======================================================
@@ -232,6 +250,7 @@ export const productService = {
   getStationeryProducts,
   getProductBySlug,
   getProductById,
+  getProductBySlugOrId,
   getAdminProducts,
   createProduct,
   updateProduct,

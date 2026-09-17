@@ -11,9 +11,7 @@ import {
   AlertCircle,
   ShoppingBag,
   Lock,
-  LocateFixed,
   CreditCard,
-  Banknote,
 } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import { useAuth } from "../store/AuthStore";
@@ -21,8 +19,6 @@ import { useCart } from "../context/CartContext";
 import { formatINR } from "@/lib/formatters/currency";
 import * as addressService from "@/lib/services/addressService";
 import { previewCheckout } from "@/lib/services/checkoutService";
-import { locateAddress } from "@/lib/services/geocodeService";
-import { placeCodOrder } from "@/lib/services/orderService";
 import {
   createPaymentOrder,
   loadRazorpay,
@@ -66,8 +62,6 @@ export default function CheckoutPage() {
   const [busy, setBusy] = useState(false);
   const [paying, setPaying] = useState(false);
   const [method, setMethod] = useState("online");
-  const [locating, setLocating] = useState(false);
-  const [located, setLocated] = useState(false);
   const [error, setError] = useState("");
 
   const setField = (key) => (e) =>
@@ -143,34 +137,6 @@ export default function CheckoutPage() {
     };
   }, [selectedId, isAuthenticated, authedCall, cart.count]);
 
-  /**
-   * Fills the form from the device's location. Everything it writes stays a
-   * normal editable field — a rooftop fix still gets the flat number wrong,
-   * so the customer always gets the last word.
-   */
-  const useMyLocation = async () => {
-    if (locating) return;
-
-    setLocating(true);
-    setError("");
-    try {
-      const found = await locateAddress();
-      setForm((current) => ({
-        ...current,
-        // Only fill what the lookup actually returned; never blank out
-        // something the customer already typed.
-        ...Object.fromEntries(
-          Object.entries(found).filter(([, value]) => value)
-        ),
-      }));
-      setLocated(true);
-    } catch (err) {
-      setError(err?.message || "Could not get your location.");
-    } finally {
-      setLocating(false);
-    }
-  };
-
   // If the backend says the chosen method is unavailable, fall back to one
   // that is, so PAY NOW can never submit something that will be refused.
   useEffect(() => {
@@ -195,7 +161,6 @@ export default function CheckoutPage() {
         addressService.createAddress(t, form)
       );
       setForm(EMPTY_FORM);
-      setLocated(false);
       setShowForm(false);
       await loadAddresses(created?.id);
     } catch (err) {
@@ -233,28 +198,8 @@ export default function CheckoutPage() {
   // Pay
   // ----------------------------------------------------------------
 
-  /** Cash on delivery: no payment gateway, the order is placed directly. */
-  const placeCod = async () => {
-    setPaying(true);
-    setError("");
-    try {
-      const { order } = await authedCall((t) => placeCodOrder(t, selectedId));
-      await cart.clear();
-      router.push(order?.id ? `/orders/${order.id}` : "/orders");
-    } catch (err) {
-      setError(
-        err?.status === 404
-          ? "Cash on delivery is not available yet. Please pay online."
-          : err?.message || "Could not place your order."
-      );
-      setPaying(false);
-    }
-  };
-
   const pay = async () => {
     if (paying || !selectedId) return;
-
-    if (method === "cod") return placeCod();
 
     setPaying(true);
     setError("");
@@ -331,21 +276,12 @@ export default function CheckoutPage() {
       label: "Pay online",
       hint: "UPI, cards, netbanking, wallets and EMI",
     },
-    cod: {
-      Icon: Banknote,
-      label: "Cash on delivery",
-      hint: "Pay the courier when your order arrives",
-    },
   };
 
-  // The backend decides whether COD is on and under what cap, and sends the
-  // list when it knows. Older deployments do not, so both are offered and a
-  // refusal surfaces as an error instead.
+  // Cash on delivery is not offered here — only ever show methods this page
+  // knows how to render, whatever the backend sends.
   const paymentOptions = (
-    preview?.paymentMethods || [
-      { id: "online", available: true },
-      { id: "cod", available: true },
-    ]
+    preview?.paymentMethods || [{ id: "online", available: true }]
   )
     .filter((option) => METHOD_UI[option.id])
     .map((option) => ({
@@ -545,25 +481,7 @@ export default function CheckoutPage() {
                   <p className="text-[14px] font-bold uppercase tracking-[1px] text-ink">
                     New address
                   </p>
-
-                  <button
-                    type="button"
-                    onClick={useMyLocation}
-                    disabled={locating}
-                    className="flex items-center gap-2 border border-line px-4 py-2.5 text-[11px] font-semibold tracking-[1px] text-ink transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
-                  >
-                    <LocateFixed size={14} strokeWidth={2} />
-                    {locating ? "FINDING…" : "USE MY LOCATION"}
-                  </button>
                 </div>
-
-                {located && (
-                  <p className="mt-3 text-[12px] leading-5 text-muted">
-                    Filled from your location — check every line and correct
-                    anything before saving. Flat and building numbers are rarely
-                    right.
-                  </p>
-                )}
 
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <input
@@ -793,21 +711,13 @@ export default function CheckoutPage() {
                     disabled={paying || busy || !selectedId}
                     className="mt-6 w-full bg-primary py-4 text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
                   >
-                    {paying
-                      ? method === "cod"
-                        ? "PLACING ORDER…"
-                        : "OPENING PAYMENT…"
-                      : method === "cod"
-                        ? "PLACE ORDER"
-                        : "PAY NOW"}
+                    {paying ? "OPENING PAYMENT…" : "PAY NOW"}
                   </button>
 
-                  {method === "online" && (
-                    <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-muted">
-                      <Lock size={12} strokeWidth={2} />
-                      Secured by Razorpay
-                    </p>
-                  )}
+                  <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-muted">
+                    <Lock size={12} strokeWidth={2} />
+                    Secured by Razorpay
+                  </p>
                 </>
               )}
             </div>

@@ -204,6 +204,15 @@ body {
   }
 }
 
+@keyframes ck-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @keyframes ck-scroll-cue {
   0% {
     transform: translateY(-40%);
@@ -233,6 +242,12 @@ body {
 
 .ck-scroll-cue {
   animation: ck-scroll-cue 1900ms ease-in-out infinite;
+}
+
+/* Offer banner ticker — duplicated content scrolls edge to edge, looping
+   seamlessly at the halfway point. */
+.ck-marquee-track {
+  animation: ck-marquee 22s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
