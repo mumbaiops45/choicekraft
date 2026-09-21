@@ -1,6 +1,7 @@
 import { Clock, Mail, Phone } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import Reveal from "../../components/Reveal";
+import ContactForm from "../../components/ContactForm";
 import { CONTACT } from "../../data/policies";
 
 export const metadata = {
@@ -102,29 +103,7 @@ export default function ContactPage() {
           </dl>
         </div>
 
-        <form className="space-y-4">
-          <input
-            type="text"
-            placeholder="Your name"
-            className="w-full border border-line px-4 py-3 text-sm outline-none transition-colors focus:border-primary"
-          />
-          <input
-            type="email"
-            placeholder="Your email"
-            className="w-full border border-line px-4 py-3 text-sm outline-none transition-colors focus:border-primary"
-          />
-          <textarea
-            rows={6}
-            placeholder="Your message"
-            className="w-full border border-line px-4 py-3 text-sm outline-none transition-colors focus:border-primary"
-          />
-          <button
-            type="submit"
-            className="bg-primary px-8 py-3 text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover"
-          >
-            SEND MESSAGE
-          </button>
-        </form>
+        <ContactForm />
       </section>
     </>
   );

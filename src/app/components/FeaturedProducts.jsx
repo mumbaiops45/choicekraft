@@ -11,7 +11,8 @@ const AUTOPLAY_MS = 4200;
 
 export default function FeaturedProducts({ products = [] }) {
   const trackRef = useRef(null);
-  const { add } = useCart();
+  const { add, items: cartItems } = useCart();
+  const inCartSlugs = new Set(cartItems.map((item) => item.slug));
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -117,7 +118,7 @@ export default function FeaturedProducts({ products = [] }) {
                         onClick={() => add(product)}
                         className="flex flex-1 items-center justify-center gap-2 bg-secondary py-2.5 text-[11px] font-semibold tracking-[1.5px] text-secondary-foreground transition-colors hover:bg-primary">
                         <ShoppingBag size={14} strokeWidth={2} />
-                        ADD
+                        {inCartSlugs.has(product.slug) ? "ADDED" : "ADD"}
                       </button>
                       <Link
                         href={`/products/${product.slug}`}

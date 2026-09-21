@@ -29,6 +29,13 @@ import {
   updateMyProfile,
 } from "@/lib/services/authService";
 import useScrollLock from "../hooks/useScrollLock";
+import FieldError from "./FieldError";
+import {
+  cleanEmail,
+  validateEmail,
+  validateName,
+  validateNewPassword,
+} from "@/lib/validation";
 
 /**
  * Account drawer.
@@ -59,6 +66,8 @@ export default function AccountPanel({ open, onClose }) {
   const [mode, setMode] = useState("signin");
   const [tab, setTab] = useState("profile");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  // Per-field problems on the sign in / register form, shown under each field.
+  const [errors, setErrors] = useState({});
   const [profile, setProfile] = useState({ name: "", phone: "" });
   const [passwords, setPasswords] = useState({
     currentPassword: "",
@@ -90,6 +99,7 @@ export default function AccountPanel({ open, onClose }) {
   useEffect(() => {
     if (!open) {
       setNotice(null);
+      setErrors({});
       setForm({ name: "", email: "", password: "" });
       setPasswords({
         currentPassword: "",
@@ -111,8 +121,48 @@ export default function AccountPanel({ open, onClose }) {
     setProfile({ name: user?.name || "", phone: user?.phone || "" });
   }, [user]);
 
-  const set = (key) => (e) =>
-    setForm((current) => ({ ...current, [key]: e.target.value }));
+  /**
+   * What is wrong with one field of the sign in / register form, or "".
+   *
+   * Registering is strict — a real name, a well-formed email, a password with a
+   * letter and a number. Signing in only needs the fields filled: whether the
+   * password is right is the server's call, and an older account's password
+   * may predate today's rules.
+   */
+  const fieldProblem = (key, value) => {
+    const registering = mode === "register";
+
+    if (key === "name") {
+      // Punctuation allowed: D'Souza, Mary-Ann, Dr. Rao.
+      return registering ? validateName(value, { allowPunctuation: true }) : "";
+    }
+    if (key === "email") return validateEmail(value);
+    if (key === "password") {
+      if (registering) return validateNewPassword(value);
+      return value ? "" : "Please enter your password.";
+    }
+    return "";
+  };
+
+  const set = (key) => (e) => {
+    // Email addresses hold no spaces, so a stray one (autofill, a paste) is
+    // dropped rather than left to fail the format check.
+    const value = key === "email" ? cleanEmail(e.target.value) : e.target.value;
+    setForm((current) => ({ ...current, [key]: value }));
+
+    // Already flagged: re-check as they type so it clears the moment it is
+    // right, instead of waiting for the next blur.
+    if (errors[key]) {
+      setErrors((current) => ({ ...current, [key]: fieldProblem(key, value) }));
+    }
+  };
+
+  const blurField = (key) => () => {
+    // A password box that was only tabbed through while signing in is not yet
+    // a mistake — that is checked on submit.
+    if (key === "password" && mode === "signin") return;
+    setErrors((current) => ({ ...current, [key]: fieldProblem(key, form[key]) }));
+  };
 
   const setProfileField = (key) => (e) =>
     setProfile((current) => ({ ...current, [key]: e.target.value }));
@@ -127,6 +177,7 @@ export default function AccountPanel({ open, onClose }) {
   const go = (next) => {
     setMode(next);
     setNotice(null);
+    setErrors({});
   };
 
   const fail = (text) => setNotice({ type: "error", text });
@@ -137,38 +188,43 @@ export default function AccountPanel({ open, onClose }) {
   // ----------------------------------------------------------------
 
   /**
-   * The inputs carry `required`, but relying on browser validation alone means
-   * a too-short password blocks the submit with no feedback from the app at
-   * all — it just looks like the button does nothing. Check here and say what
-   * is wrong.
+   * The form is `noValidate`, so the browser never blocks a submit with a
+   * bubble of its own — every problem is checked here and shown under the field
+   * it belongs to, and the first one gets the focus.
    */
-  const validate = () => {
-    if (mode === "register" && form.name.trim().length < 2) {
-      return "Please enter your full name.";
-    }
-    if (!form.email.trim()) return "Please enter your email address.";
-    if (form.password.length < 8) {
-      return "Password must be at least 8 characters.";
-    }
-    return "";
-  };
-
   const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
 
-    const problem = validate();
-    if (problem) return fail(problem);
+    // Read before the awaits below: React clears currentTarget after them.
+    const formElement = e.currentTarget;
+
+    const found = {};
+    for (const key of mode === "register"
+      ? ["name", "email", "password"]
+      : ["email", "password"]) {
+      const problem = fieldProblem(key, form[key]);
+      if (problem) found[key] = problem;
+    }
+    setErrors(found);
+
+    const first = Object.keys(found)[0];
+    if (first) {
+      setNotice(null);
+      formElement.elements[first]?.focus();
+      return;
+    }
 
     setBusy(true);
     setNotice(null);
 
+    const email = form.email.trim();
     const result =
       mode === "signin"
-        ? await login({ email: form.email, password: form.password })
+        ? await login({ email, password: form.password })
         : await register({
-            name: form.name,
-            email: form.email,
+            name: form.name.trim().replace(/\s+/g, " "),
+            email,
             password: form.password,
           });
 
@@ -176,8 +232,16 @@ export default function AccountPanel({ open, onClose }) {
 
     if (result.ok) {
       setForm({ name: "", email: "", password: "" });
+      setErrors({});
       setNotice(null);
       setTab("profile");
+    } else if (
+      mode === "register" &&
+      /already exists/i.test(result.message || "")
+    ) {
+      // "An account with this email already exists" is about the email field.
+      setErrors({ email: result.message });
+      formElement.elements.email?.focus();
     } else {
       fail(result.message);
     }
@@ -328,7 +392,7 @@ export default function AccountPanel({ open, onClose }) {
   };
 
   const fieldBase =
-    "w-full border border-line py-3 pl-11 text-[14px] text-ink outline-none transition-colors placeholder:text-muted focus:border-primary";
+    "w-full border border-line py-3 pl-11 text-[14px] text-ink outline-none transition-colors placeholder:text-muted focus:border-primary aria-invalid:border-danger";
   const field = fieldBase + " pr-4";
   /** Leaves room on the right for the show/hide button. */
   const fieldWithToggle = fieldBase + " pr-12";
@@ -640,6 +704,7 @@ export default function AccountPanel({ open, onClose }) {
                     onClick={() => {
                       setMode(m);
                       setNotice(null);
+                      setErrors({});
                     }}
                     tabIndex={open ? 0 : -1}
                     className={
@@ -654,71 +719,116 @@ export default function AccountPanel({ open, onClose }) {
                 ))}
               </div>
 
-              <form onSubmit={submit} className="mt-6 space-y-4">
+              {/* noValidate: the browser's own "please fill out this field"
+                  bubble would pre-empt the messages checked in submit(). */}
+              <form onSubmit={submit} noValidate className="mt-6 space-y-4">
                 {mode === "register" && (
+                  <div>
+                    <div className="relative">
+                      <User size={17} strokeWidth={1.8} className={iconClass} />
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        maxLength={100}
+                        value={form.name}
+                        onChange={set("name")}
+                        onBlur={blurField("name")}
+                        autoComplete="name"
+                        placeholder="Full name"
+                        aria-label="Full name"
+                        aria-invalid={errors.name ? "true" : undefined}
+                        aria-describedby={
+                          errors.name ? "account-name-error" : undefined
+                        }
+                        tabIndex={open ? 0 : -1}
+                        className={field}
+                      />
+                    </div>
+                    <FieldError id="account-name-error">{errors.name}</FieldError>
+                  </div>
+                )}
+
+                <div>
                   <div className="relative">
-                    <User size={17} strokeWidth={1.8} className={iconClass} />
+                    <Mail size={17} strokeWidth={1.8} className={iconClass} />
                     <input
-                      type="text"
+                      type="email"
+                      name="email"
                       required
-                      maxLength={100}
-                      value={form.name}
-                      onChange={set("name")}
-                      autoComplete="name"
-                      placeholder="Full name"
-                      aria-label="Full name"
+                      maxLength={254}
+                      value={form.email}
+                      onChange={set("email")}
+                      onBlur={blurField("email")}
+                      autoComplete="email"
+                      placeholder="Email address"
+                      aria-label="Email address"
+                      aria-invalid={errors.email ? "true" : undefined}
+                      aria-describedby={
+                        errors.email ? "account-email-error" : undefined
+                      }
                       tabIndex={open ? 0 : -1}
                       className={field}
                     />
                   </div>
-                )}
-
-                <div className="relative">
-                  <Mail size={17} strokeWidth={1.8} className={iconClass} />
-                  <input
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={set("email")}
-                    autoComplete="email"
-                    placeholder="Email address"
-                    aria-label="Email address"
-                    tabIndex={open ? 0 : -1}
-                    className={field}
-                  />
+                  <FieldError id="account-email-error">{errors.email}</FieldError>
                 </div>
 
-                <div className="relative">
-                  <Lock size={17} strokeWidth={1.8} className={iconClass} />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={form.password}
-                    onChange={set("password")}
-                    autoComplete={
-                      mode === "signin" ? "current-password" : "new-password"
-                    }
-                    placeholder="Password"
-                    aria-label="Password"
-                    tabIndex={open ? 0 : -1}
-                    className={fieldWithToggle}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((shown) => !shown)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                    aria-pressed={showPassword}
-                    tabIndex={open ? 0 : -1}
-                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-muted transition-colors hover:text-primary"
-                  >
-                    {showPassword ? (
-                      <EyeOff size={17} strokeWidth={1.8} />
-                    ) : (
-                      <Eye size={17} strokeWidth={1.8} />
-                    )}
-                  </button>
+                <div>
+                  <div className="relative">
+                    <Lock size={17} strokeWidth={1.8} className={iconClass} />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      required
+                      value={form.password}
+                      onChange={set("password")}
+                      onBlur={blurField("password")}
+                      autoComplete={
+                        mode === "signin" ? "current-password" : "new-password"
+                      }
+                      placeholder="Password"
+                      aria-label="Password"
+                      aria-invalid={errors.password ? "true" : undefined}
+                      aria-describedby={
+                        errors.password
+                          ? "account-password-error"
+                          : mode === "register"
+                            ? "account-password-hint"
+                            : undefined
+                      }
+                      tabIndex={open ? 0 : -1}
+                      className={fieldWithToggle}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((shown) => !shown)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      aria-pressed={showPassword}
+                      tabIndex={open ? 0 : -1}
+                      className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-muted transition-colors hover:text-primary"
+                    >
+                      {showPassword ? (
+                        <EyeOff size={17} strokeWidth={1.8} />
+                      ) : (
+                        <Eye size={17} strokeWidth={1.8} />
+                      )}
+                    </button>
+                  </div>
+                  <FieldError id="account-password-error">
+                    {errors.password}
+                  </FieldError>
+                  {/* The rule, up front, until a problem replaces it. */}
+                  {mode === "register" && !errors.password && (
+                    <p
+                      id="account-password-hint"
+                      className="mt-1.5 text-[12px] leading-5 text-muted"
+                    >
+                      At least 8 characters, with a letter and a number.
+                    </p>
+                  )}
                 </div>
 
                 {mode === "signin" && (

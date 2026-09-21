@@ -8,11 +8,12 @@ import { useAuth } from "../store/AuthStore";
 import { useWishlist } from "../store/WishlistStore";
 
 export default function ProductCard({ product }) {
-  const { add } = useCart();
+  const { add, items } = useCart();
   const { isAuthenticated } = useAuth();
   const wishlist = useWishlist();
 
   const saved = wishlist.has(product.id);
+  const inCart = items.some((item) => item.slug === product.slug);
   const off = product.mrp
     ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
     : 0;
@@ -109,7 +110,7 @@ export default function ProductCard({ product }) {
                 add(product);
               }}
               className="w-full bg-secondary py-3 text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors hover:bg-primary">
-              ADD TO CART
+              {inCart ? "ADDED TO CART" : "ADD TO CART"}
             </button>
           </div>
         </div>

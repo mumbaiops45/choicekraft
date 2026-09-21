@@ -35,7 +35,8 @@ const discountOf = (p) =>
   p.mrp ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
 
 export default function ProductBrowser({ products, activeCategory }) {
-  const { add } = useCart();
+  const { add, items: cartItems } = useCart();
+  const inCartSlugs = new Set(cartItems.map((item) => item.slug));
   const { categories } = useCategoryStore();
   const [bands, setBands] = useState([]);
   const [kindFilter, setKindFilter] = useState([]);
@@ -353,7 +354,9 @@ export default function ProductBrowser({ products, activeCategory }) {
                       <button
                         onClick={() => add(product)}
                         className="mt-5 w-full bg-secondary py-3 text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors hover:bg-primary sm:w-[190px]">
-                        ADD TO CART
+                        {inCartSlugs.has(product.slug)
+                          ? "ADDED TO CART"
+                          : "ADD TO CART"}
                       </button>
                     </div>
                   </article>

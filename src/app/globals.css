@@ -170,25 +170,33 @@ html {
 
 /* Chrome/Edge/Safari default to a near-invisible overlay scrollbar, which on
    a tall form (e.g. the checkout address fields) makes it look like there is
-   nothing more to scroll to. Keep one always visible instead. */
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
+   nothing more to scroll to. Keep one always visible instead.
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+   Mouse devices only. On a phone, styling ::-webkit-scrollbar switches some
+   browsers (older Chrome, Samsung Internet, in-app browsers) from their slim
+   auto-hiding scrollbar to a permanent 12px one: it takes width off an already
+   narrow screen and draws a bar along the bottom of any page that overflows
+   even slightly. */
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
 
-::-webkit-scrollbar-thumb {
-  background-color: var(--brand-line-strong);
-  border-radius: 999px;
-  border: 3px solid var(--background);
-  background-clip: padding-box;
-}
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--brand-muted);
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--brand-line-strong);
+    border-radius: 999px;
+    border: 3px solid var(--background);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--brand-muted);
+  }
 }
 
 body {

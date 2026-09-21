@@ -60,10 +60,14 @@ export default function Footer() {
       <span aria-hidden="true" className="block h-[3px] w-full bg-primary" />
 
       <div className="mx-auto max-w-[1510px] px-6 py-16 lg:py-20">
-        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1.2fr_1.3fr] lg:gap-10">
+        {/* grid-cols-1 is minmax(0, 1fr): the bare `grid` it replaces sized its
+            one column to the widest unshrinkable child, so on a screen narrower
+            than the logo + wordmark (~314px with padding) the footer pushed the
+            whole page sideways. */}
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1.2fr_1.3fr] lg:gap-10">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <img
                 src="/images/logo.png"
                 alt="ChoiceKraft"

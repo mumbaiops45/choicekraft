@@ -19,7 +19,7 @@ import { formatINR } from "@/lib/formatters/currency";
 import useScrollLock from "../hooks/useScrollLock";
 
 export default function CartDrawer() {
-  const { items, count, subtotal, saved, open, setOpen, setQty, remove, error, clearError } =
+  const { items, productCount, subtotal, saved, open, setOpen, setQty, remove, error, clearError } =
     useCart();
   const { isAuthenticated, restoring, openAccount, closeAccount } = useAuth();
   const { amountToFreeShipping, giftEligibleFor, amountToFreeGift, freeGiftProduct } =
@@ -90,7 +90,7 @@ export default function CartDrawer() {
           <h2 className="flex items-center gap-2.5 text-[15px] font-bold uppercase tracking-[1.5px] text-ink">
             <ShoppingBag size={18} strokeWidth={2} className="text-primary" />
             Your Cart
-            <span className="text-muted">({count})</span>
+            <span className="text-muted">({productCount})</span>
           </h2>
           <button
             onClick={() => setOpen(false)}

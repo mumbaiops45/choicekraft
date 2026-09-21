@@ -27,7 +27,7 @@ import Reveal from "./Reveal";
  */
 export default function ProductDetail({ product }) {
   const router = useRouter();
-  const { add } = useCart();
+  const { add, items } = useCart();
   const { isAuthenticated } = useAuth();
   const wishlist = useWishlist();
   const { freeShippingThreshold } = useSettingsStore();
@@ -37,6 +37,7 @@ export default function ProductDetail({ product }) {
   const [buying, setBuying] = useState(false);
 
   const saved = wishlist.has(product.id);
+  const inCart = items.some((item) => item.slug === product.slug);
   const off = product.mrp
     ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
     : 0;
@@ -55,7 +56,9 @@ export default function ProductDetail({ product }) {
   const handleBuyNow = async () => {
     if (busy || !product.inStock) return;
     setBuying(true);
-    await add(product, qty);
+    // Already in the cart (from an earlier tap): the cart is refusing a second
+    // add, and there is nothing to add anyway — just go and pay for it.
+    if (!inCart) await add(product, qty);
     router.push("/checkout");
   };
 
@@ -163,7 +166,7 @@ export default function ProductDetail({ product }) {
               className="flex flex-1 items-center justify-center gap-2 border-2 border-secondary py-4 text-[12px] font-semibold uppercase tracking-[2px] text-ink transition-colors hover:bg-secondary hover:text-secondary-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ShoppingBag size={16} strokeWidth={2} />
-              {adding ? "ADDING…" : "ADD TO CART"}
+              {adding ? "ADDING…" : inCart ? "ADDED TO CART" : "ADD TO CART"}
             </button>
             <button
               onClick={handleBuyNow}

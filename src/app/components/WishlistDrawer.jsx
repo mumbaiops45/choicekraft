@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { X, Heart, Trash2, ShoppingBag, AlertCircle } from "lucide-react";
+import {
+  X,
+  Heart,
+  Trash2,
+  ShoppingBag,
+  AlertCircle,
+  Minus,
+  Plus,
+} from "lucide-react";
 import { useWishlist } from "../store/WishlistStore";
 import { useCart } from "../context/CartContext";
 import { formatINR } from "@/lib/formatters/currency";
@@ -11,8 +19,10 @@ import useScrollLock from "../hooks/useScrollLock";
 /**
  * Saved-items drawer, opened from the navbar heart.
  *
- * Mirrors the cart drawer so the two read as a pair. "MOVE" is the whole point
- * of the list: it adds the product to the cart and drops it from here.
+ * Mirrors the cart drawer so the two read as a pair. A product's image and name
+ * open its page. "ADD TO CART" puts it in the cart and turns into the same
+ * - 1 + stepper the cart uses; the product stays on the wishlist until it is
+ * removed here.
  */
 export default function WishlistDrawer({ open, onClose }) {
   const wishlist = useWishlist();
@@ -32,19 +42,23 @@ export default function WishlistDrawer({ open, onClose }) {
     if (!open) setError("");
   }, [open]);
 
-  /**
-   * Wishlist -> cart. If the cart refuses it (out of stock), the product stays
-   * in the wishlist rather than vanishing from both places.
-   */
-  const moveToCart = async (product) => {
+  // Adds in place: no cart drawer sliding over this one, and the row turns
+  // into a stepper.
+  const addToCart = async (product) => {
     setError("");
-    const result = await cart.add(product, 1);
+    const result = await cart.add(product, 1, { openCart: false });
     if (result && result.ok === false) {
       setError(result.message || "Could not add that to your cart.");
-      return;
     }
-    await wishlist.remove(product.id);
-    onClose();
+  };
+
+  // Going down to 0 removes it from the cart, and the button comes back.
+  const changeQty = async (product, qty) => {
+    setError("");
+    const result = await cart.setQty(product.slug, qty);
+    if (result && result.ok === false && result.message) {
+      setError(result.message);
+    }
   };
 
   return (
@@ -135,9 +149,24 @@ export default function WishlistDrawer({ open, onClose }) {
         ) : (
           <>
             <ul className="flex-1 divide-y divide-line overflow-y-auto px-6">
-              {wishlist.products.map((product) => (
+              {wishlist.products.map((product) => {
+                // Same product as a line in the cart, if there is one.
+                const inCart = cart.items.find(
+                  (item) => item.slug === product.slug
+                );
+                const productHref = `/products/${product.slug}`;
+
+                return (
                 <li key={product.id} className="flex gap-4 py-5">
-                  <div className="h-[92px] w-[74px] shrink-0 overflow-hidden bg-surface">
+                  {/* The name link below is the accessible one; this only
+                      makes the picture tappable too. */}
+                  <Link
+                    href={productHref}
+                    onClick={onClose}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="block h-[92px] w-[74px] shrink-0 overflow-hidden bg-surface"
+                  >
                     <img
                       src={product.image}
                       alt={product.name}
@@ -149,7 +178,7 @@ export default function WishlistDrawer({ open, onClose }) {
                           : "object-contain p-2")
                       }
                     />
-                  </div>
+                  </Link>
 
                   <div className="flex min-w-0 flex-1 flex-col">
                     {product.type && (
@@ -157,9 +186,14 @@ export default function WishlistDrawer({ open, onClose }) {
                         {product.type}
                       </p>
                     )}
-                    <p className="mt-1 text-[15px] font-bold leading-5 text-ink">
+                    <Link
+                      href={productHref}
+                      onClick={onClose}
+                      tabIndex={open ? 0 : -1}
+                      className="mt-1 text-[15px] font-bold leading-5 text-ink transition-colors hover:text-primary"
+                    >
                       {product.name}
-                    </p>
+                    </Link>
                     <p className="mt-1 text-[15px] font-bold text-primary">
                       {formatINR(product.price)}
                       {product.mrp > product.price && (
@@ -170,15 +204,44 @@ export default function WishlistDrawer({ open, onClose }) {
                     </p>
 
                     <div className="mt-auto flex items-center justify-between pt-3">
-                      <button
-                        onClick={() => moveToCart(product)}
-                        disabled={wishlist.isPending(product.id) || cart.busy}
-                        tabIndex={open ? 0 : -1}
-                        className="flex items-center gap-2 bg-secondary px-4 py-2.5 text-[11px] font-semibold tracking-[1.5px] text-secondary-foreground transition-colors hover:bg-primary disabled:opacity-50"
-                      >
-                        <ShoppingBag size={14} strokeWidth={2} />
-                        MOVE TO CART
-                      </button>
+                      {inCart ? (
+                        <div className="flex items-center border border-line">
+                          <button
+                            onClick={() => changeQty(product, inCart.qty - 1)}
+                            disabled={inCart.pending}
+                            aria-label={"Decrease quantity of " + product.name}
+                            tabIndex={open ? 0 : -1}
+                            className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface disabled:opacity-50"
+                          >
+                            <Minus size={14} strokeWidth={2.2} />
+                          </button>
+                          <span
+                            aria-live="polite"
+                            className="w-9 text-center text-[14px] font-semibold tabular-nums text-ink"
+                          >
+                            {inCart.qty}
+                          </span>
+                          <button
+                            onClick={() => changeQty(product, inCart.qty + 1)}
+                            disabled={inCart.pending}
+                            aria-label={"Increase quantity of " + product.name}
+                            tabIndex={open ? 0 : -1}
+                            className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface disabled:opacity-50"
+                          >
+                            <Plus size={14} strokeWidth={2.2} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => addToCart(product)}
+                          disabled={wishlist.isPending(product.id)}
+                          tabIndex={open ? 0 : -1}
+                          className="flex items-center gap-2 bg-secondary px-4 py-2.5 text-[11px] font-semibold tracking-[1.5px] text-secondary-foreground transition-colors hover:bg-primary disabled:opacity-50"
+                        >
+                          <ShoppingBag size={14} strokeWidth={2} />
+                          ADD TO CART
+                        </button>
+                      )}
 
                       <button
                         onClick={() => wishlist.remove(product.id)}
@@ -192,7 +255,8 @@ export default function WishlistDrawer({ open, onClose }) {
                     </div>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
 
             <footer className="border-t border-line px-6 py-5">

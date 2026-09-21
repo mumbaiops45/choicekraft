@@ -162,33 +162,63 @@ export function CartProvider({ children }) {
     [items]
   );
 
+  // Server cart calls currently running. Quick taps on + each start one.
+  const inFlight = useRef(0);
+
   /** Runs a server cart call, surfaces its message, and reloads the cart. */
   const run = useCallback(
     async (action) => {
       const token = getToken();
       if (!token) return { ok: false };
 
+      inFlight.current += 1;
       setBusy(true);
       setError("");
+
+      let outcome;
       try {
         await authedCall((t) => action(t));
-        await loadServerCart();
-        return { ok: true };
+        outcome = { ok: true };
       } catch (err) {
         // "Only 3 units available" and friends come from the backend.
         const message = err?.message || "Something went wrong.";
         setError(message);
-        return { ok: false, message };
-      } finally {
-        setBusy(false);
+        outcome = { ok: false, message };
       }
+
+      inFlight.current -= 1;
+
+      // Re-read only once the last call has finished. Reading after each of
+      // several quick taps would put a half-updated count back on screen
+      // between them. (A failed call is re-read by whoever made it.)
+      if (outcome.ok && inFlight.current === 0) await loadServerCart();
+      if (inFlight.current === 0) setBusy(false);
+
+      return outcome;
     },
     [getToken, authedCall, loadServerCart]
   );
 
   const add = useCallback(
-    async (product, qty = 1) => {
-      setOpen(true);
+    async (product, qty = 1, { openCart = true } = {}) => {
+      // A product goes into the cart once, and how many of it is changed with
+      // the - / + stepper. Letting every tap on "Add to cart" quietly bump the
+      // quantity meant the same product got added again and again. Say so
+      // instead — in the cart drawer, next to the line and its stepper.
+      if (items.some((item) => item.slug === product.slug)) {
+        const message = `${product.name} is already in your cart. Change the quantity below.`;
+        setError(message);
+        if (openCart) setOpen(true);
+        return { ok: false, alreadyInCart: true, message };
+      }
+
+      // Nothing left over from an earlier refusal (guests never go through
+      // `run`, which is what clears it for signed-in shoppers).
+      setError("");
+
+      // The wishlist adds in place and shows a stepper, so it opts out of
+      // having the cart drawer slide over the top of it.
+      if (openCart) setOpen(true);
 
       if (!isAuthenticated) {
         setLocalItems((current) => {
@@ -230,7 +260,7 @@ export function CartProvider({ children }) {
 
       return result;
     },
-    [isAuthenticated, run, loadServerCart]
+    [items, isAuthenticated, run, loadServerCart]
   );
 
   const setQty = useCallback(
@@ -248,27 +278,31 @@ export function CartProvider({ children }) {
       // A line just added is on screen before the server has given it an id.
       if (!item?.itemId) return { ok: false };
 
+      // Change the number on screen first, as add() does, so the stepper
+      // answers a tap straight away instead of after two round trips.
+      setServerItems((current) =>
+        qty <= 0
+          ? current.filter((i) => i.slug !== slug)
+          : current.map((i) => (i.slug === slug ? { ...i, qty } : i))
+      );
+
       // The backend has no "quantity 0" — that is a removal.
-      return qty <= 0
-        ? run((token) => cartService.removeCartItem(token, item.itemId))
-        : run((token) => cartService.updateCartItem(token, item.itemId, qty));
+      const result = await run((token) =>
+        qty <= 0
+          ? cartService.removeCartItem(token, item.itemId)
+          : cartService.updateCartItem(token, item.itemId, qty)
+      );
+
+      // Refused (e.g. more than is in stock): put the server's number back.
+      if (!result.ok) await loadServerCart();
+
+      return result;
     },
-    [isAuthenticated, findItem, run]
+    [isAuthenticated, findItem, run, loadServerCart]
   );
 
-  const remove = useCallback(
-    async (slug) => {
-      if (!isAuthenticated) {
-        setLocalItems((current) => current.filter((i) => i.slug !== slug));
-        return { ok: true };
-      }
-
-      const item = findItem(slug);
-      if (!item?.itemId) return { ok: false };
-      return run((token) => cartService.removeCartItem(token, item.itemId));
-    },
-    [isAuthenticated, findItem, run]
-  );
+  // Removing a line is setting its quantity to nothing.
+  const remove = useCallback((slug) => setQty(slug, 0), [setQty]);
 
   const clear = useCallback(async () => {
     if (!isAuthenticated) {
@@ -292,7 +326,12 @@ export function CartProvider({ children }) {
     );
     return {
       items,
+      /** Units in the basket: 1 product at quantity 2 is 2. Checkout keys off
+          this, so changing a quantity re-prices the order. */
       count,
+      /** Different products in the basket: 1 product at quantity 2 is 1. This
+          is the number to show people — the cart title and navbar badge. */
+      productCount: items.length,
       subtotal,
       saved,
       open,

@@ -42,7 +42,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
-  const { count, setOpen: setCartOpen } = useCart();
+  const { productCount, setOpen: setCartOpen } = useCart();
   const { isAuthenticated, accountOpen, openAccount, closeAccount } = useAuth();
   const wishlist = useWishlist();
   const navRef = useRef(null);
@@ -236,12 +236,16 @@ export default function Navbar() {
 
           <button
             onClick={() => setCartOpen(true)}
-            aria-label={"Shopping cart, " + count + " items"}
+            aria-label={
+              "Shopping cart, " +
+              productCount +
+              (productCount === 1 ? " product" : " products")
+            }
             className="relative flex w-[70px] items-center justify-center bg-line transition-colors hover:bg-line-strong"
           >
             <ShoppingBag size={25} strokeWidth={1.7} className="text-ink" />
             <span className="absolute right-[14px] top-[20px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold leading-none text-primary-foreground">
-              {count}
+              {productCount}
             </span>
           </button>
         </div>
@@ -265,12 +269,16 @@ export default function Navbar() {
 
           <button
             onClick={() => setCartOpen(true)}
-            aria-label={"Shopping cart, " + count + " items"}
+            aria-label={
+              "Shopping cart, " +
+              productCount +
+              (productCount === 1 ? " product" : " products")
+            }
             className="relative flex h-full w-[60px] shrink-0 items-center justify-center"
           >
             <ShoppingBag size={24} strokeWidth={1.6} className="text-ink" />
             <span className="absolute right-2 top-4 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
-              {count}
+              {productCount}
             </span>
           </button>
 
