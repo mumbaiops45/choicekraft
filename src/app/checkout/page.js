@@ -7,6 +7,7 @@ import {
   MapPin,
   Plus,
   Check,
+  Pencil,
   Trash2,
   AlertCircle,
   ShoppingBag,
@@ -25,6 +26,24 @@ import {
   loadRazorpay,
   verifyPayment,
 } from "@/lib/services/paymentService";
+
+/**
+ * A form control with its name shown above it. Placeholders alone vanish as
+ * soon as a field has a value, which leaves an edit form with no field names.
+ */
+function FormField({ label, optional = false, className = "", children }) {
+  return (
+    <label className={"block " + className}>
+      <span className="mb-1.5 block text-[13px] font-semibold text-ink-soft">
+        {label}
+        {optional && (
+          <span className="ml-1 font-normal text-muted">(optional)</span>
+        )}
+      </span>
+      {children}
+    </label>
+  );
+}
 
 const EMPTY_FORM = {
   name: "",
@@ -64,6 +83,9 @@ export default function CheckoutPage() {
   const [preview, setPreview] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
+  // Id of the address the form is editing; "" means it is adding a new one.
+  const [editingId, setEditingId] = useState("");
+  const formRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -183,6 +205,44 @@ export default function CheckoutPage() {
     if (usable) setMethod(usable.id);
   }, [preview, method]);
 
+  const startNew = () => {
+    setEditingId("");
+    setForm(EMPTY_FORM);
+    setShowForm(true);
+  };
+
+  const startEdit = (address) => {
+    setError("");
+    setForm({
+      name: address.name,
+      phone: address.phone,
+      addressLine1: address.addressLine1,
+      addressLine2: address.addressLine2,
+      city: address.city,
+      state: address.state,
+      postalCode: address.postalCode,
+      country: address.country || "India",
+      addressType: address.addressType || "home",
+      isDefault: address.isDefault,
+    });
+    setEditingId(address.id);
+    setShowForm(true);
+  };
+
+  const closeForm = () => {
+    setForm(EMPTY_FORM);
+    setEditingId("");
+    setShowForm(false);
+  };
+
+  // The form sits below the address list, so bring it into view when an
+  // existing address is opened for editing from further up the page.
+  useEffect(() => {
+    if (editingId) {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [editingId]);
+
   const saveAddress = async (e) => {
     e.preventDefault();
     if (busy) return;
@@ -190,12 +250,23 @@ export default function CheckoutPage() {
     setBusy(true);
     setError("");
     try {
-      const created = await authedCall((t) =>
-        addressService.createAddress(t, form)
-      );
-      setForm(EMPTY_FORM);
-      setShowForm(false);
-      await loadAddresses(created?.id);
+      let keepSelected = selectedId;
+
+      if (editingId) {
+        // Selection stays where it was; the list is re-read below so the
+        // edited details show straight away.
+        await authedCall((t) =>
+          addressService.updateAddress(t, editingId, form)
+        );
+      } else {
+        const created = await authedCall((t) =>
+          addressService.createAddress(t, form)
+        );
+        keepSelected = created?.id;
+      }
+
+      closeForm();
+      await loadAddresses(keepSelected);
     } catch (err) {
       setError(err?.message || "Could not save the address.");
     } finally {
@@ -217,6 +288,7 @@ export default function CheckoutPage() {
 
   const removeAddress = async (id) => {
     setBusy(true);
+    if (id === editingId) closeForm();
     try {
       await authedCall((t) => addressService.deleteAddress(t, id));
       await loadAddresses(id === selectedId ? "" : selectedId);
@@ -257,6 +329,10 @@ export default function CheckoutPage() {
         );
       }
 
+      // From the address list rather than the pricing preview, so a phone
+      // number or name edited on this page is what Razorpay pre-fills.
+      const chosen = addresses.find((address) => address.id === selectedId);
+
       const razorpay = new window.Razorpay({
         key: order.keyId,
         amount: order.amountInPaise,
@@ -265,8 +341,8 @@ export default function CheckoutPage() {
         description: "Order payment",
         order_id: order.razorpayOrderId,
         prefill: {
-          name: preview?.address?.name || "",
-          contact: preview?.address?.phone || "",
+          name: chosen?.name || preview?.address?.name || "",
+          contact: chosen?.phone || preview?.address?.phone || "",
         },
         theme: { color: "#e91e78" },
         handler: async (response) => {
@@ -339,6 +415,8 @@ export default function CheckoutPage() {
 
   const selectedAddress =
     addresses.find((address) => address.id === selectedId) || null;
+  const editingAddress =
+    addresses.find((address) => address.id === editingId) || null;
 
   // Switching steps is a state flip, not a real navigation, so the browser
   // never resets scroll on its own — without this, whoever scrolled down to
@@ -561,6 +639,14 @@ export default function CheckoutPage() {
                               </button>
                             )}
                             <button
+                              onClick={() => startEdit(address)}
+                              disabled={busy}
+                              className="flex items-center gap-1.5 text-muted transition-colors hover:text-primary disabled:opacity-50"
+                            >
+                              <Pencil size={13} strokeWidth={1.8} />
+                              Edit
+                            </button>
+                            <button
                               onClick={() => removeAddress(address.id)}
                               disabled={busy}
                               className="flex items-center gap-1.5 text-muted transition-colors hover:text-primary disabled:opacity-50"
@@ -579,7 +665,7 @@ export default function CheckoutPage() {
 
             {!showForm ? (
               <button
-                onClick={() => setShowForm(true)}
+                onClick={startNew}
                 className="mt-5 flex items-center gap-2 border-2 border-secondary px-6 py-3 text-[12px] font-semibold tracking-[1.5px] text-ink transition-colors hover:bg-secondary hover:text-secondary-foreground"
               >
                 <Plus size={15} strokeWidth={2.2} />
@@ -587,98 +673,109 @@ export default function CheckoutPage() {
               </button>
             ) : (
               <form
+                ref={formRef}
                 onSubmit={saveAddress}
                 className="mt-6 border border-line bg-white p-6"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-[14px] font-bold uppercase tracking-[1px] text-ink">
-                    New address
+                    {editingId ? "Edit address" : "New address"}
                   </p>
                 </div>
 
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <input
-                    required
-                    value={form.name}
-                    onChange={setField("name")}
-                    placeholder="Full name"
-                    aria-label="Full name"
-                    className={field}
-                  />
-                  <input
-                    required
-                    value={form.phone}
-                    onChange={setField("phone")}
-                    placeholder="Phone number"
-                    aria-label="Phone number"
-                    className={field}
-                  />
-                  <input
-                    required
-                    value={form.addressLine1}
-                    onChange={setField("addressLine1")}
-                    placeholder="Flat, house no., building"
-                    aria-label="Address line 1"
-                    className={field + " sm:col-span-2"}
-                  />
-                  <input
-                    value={form.addressLine2}
-                    onChange={setField("addressLine2")}
-                    placeholder="Area, street (optional)"
-                    aria-label="Address line 2"
-                    className={field + " sm:col-span-2"}
-                  />
-                  <input
-                    required
-                    value={form.city}
-                    onChange={setField("city")}
-                    placeholder="City"
-                    aria-label="City"
-                    className={field}
-                  />
-                  <input
-                    required
-                    value={form.state}
-                    onChange={setField("state")}
-                    placeholder="State"
-                    aria-label="State"
-                    className={field}
-                  />
-                  <input
-                    required
-                    value={form.postalCode}
-                    onChange={setField("postalCode")}
-                    placeholder="PIN code"
-                    aria-label="PIN code"
-                    className={field}
-                  />
-                  <input
-                    required
-                    value={form.country}
-                    onChange={setField("country")}
-                    placeholder="Country"
-                    aria-label="Country"
-                    className={field}
-                  />
-                  <select
-                    value={form.addressType}
-                    onChange={setField("addressType")}
-                    aria-label="Address type"
-                    className={field}
-                  >
-                    <option value="home">Home</option>
-                    <option value="office">Office</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <label className="flex cursor-pointer items-center gap-2.5 text-[14px] text-ink-soft">
+                  <FormField label="Full name">
                     <input
-                      type="checkbox"
-                      checked={form.isDefault}
-                      onChange={setField("isDefault")}
-                      className="h-4 w-4 accent-[var(--primary)]"
+                      required
+                      value={form.name}
+                      onChange={setField("name")}
+                      className={field}
                     />
-                    Make this my default address
-                  </label>
+                  </FormField>
+                  <FormField label="Phone number">
+                    <input
+                      required
+                      value={form.phone}
+                      onChange={setField("phone")}
+                      className={field}
+                    />
+                  </FormField>
+                  <FormField label="Address line 1" className="sm:col-span-2">
+                    <input
+                      required
+                      value={form.addressLine1}
+                      onChange={setField("addressLine1")}
+                      placeholder="Flat, house no., building"
+                      className={field}
+                    />
+                  </FormField>
+                  <FormField
+                    label="Address line 2"
+                    optional
+                    className="sm:col-span-2"
+                  >
+                    <input
+                      value={form.addressLine2}
+                      onChange={setField("addressLine2")}
+                      placeholder="Area, street"
+                      className={field}
+                    />
+                  </FormField>
+                  <FormField label="City">
+                    <input
+                      required
+                      value={form.city}
+                      onChange={setField("city")}
+                      className={field}
+                    />
+                  </FormField>
+                  <FormField label="State">
+                    <input
+                      required
+                      value={form.state}
+                      onChange={setField("state")}
+                      className={field}
+                    />
+                  </FormField>
+                  <FormField label="PIN code">
+                    <input
+                      required
+                      value={form.postalCode}
+                      onChange={setField("postalCode")}
+                      className={field}
+                    />
+                  </FormField>
+                  <FormField label="Country">
+                    <input
+                      required
+                      value={form.country}
+                      onChange={setField("country")}
+                      className={field}
+                    />
+                  </FormField>
+                  <FormField label="Address type">
+                    <select
+                      value={form.addressType}
+                      onChange={setField("addressType")}
+                      className={field}
+                    >
+                      <option value="home">Home</option>
+                      <option value="office">Office</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </FormField>
+                  {/* Already the default, so there is nothing to opt into. */}
+                  {!editingAddress?.isDefault && (
+                    <label className="flex cursor-pointer items-center gap-2.5 text-[14px] text-ink-soft sm:self-end sm:pb-3.5">
+                      <input
+                        type="checkbox"
+                        checked={form.isDefault}
+                        onChange={setField("isDefault")}
+                        className="h-4 w-4 accent-[var(--primary)]"
+                      />
+                      Make this my default address
+                    </label>
+                  )}
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
@@ -687,12 +784,16 @@ export default function CheckoutPage() {
                     disabled={busy}
                     className="bg-primary px-8 py-3.5 text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
                   >
-                    {busy ? "SAVING…" : "SAVE ADDRESS"}
+                    {busy
+                      ? "SAVING…"
+                      : editingId
+                        ? "SAVE CHANGES"
+                        : "SAVE ADDRESS"}
                   </button>
                   {addresses.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setShowForm(false)}
+                      onClick={closeForm}
                       className="border border-line px-8 py-3.5 text-[12px] font-semibold tracking-[2px] text-ink-soft transition-colors hover:border-primary hover:text-primary"
                     >
                       CANCEL

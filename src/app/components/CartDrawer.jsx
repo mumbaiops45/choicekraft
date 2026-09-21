@@ -180,9 +180,10 @@ export default function CartDrawer() {
                       <div className="flex items-center border border-line">
                         <button
                           onClick={() => setQty(item.slug, item.qty - 1)}
+                          disabled={item.pending}
                           aria-label={"Decrease quantity of " + item.name}
                           tabIndex={open ? 0 : -1}
-                          className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface"
+                          className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface disabled:opacity-50"
                         >
                           <Minus size={14} strokeWidth={2.2} />
                         </button>
@@ -191,9 +192,10 @@ export default function CartDrawer() {
                         </span>
                         <button
                           onClick={() => setQty(item.slug, item.qty + 1)}
+                          disabled={item.pending}
                           aria-label={"Increase quantity of " + item.name}
                           tabIndex={open ? 0 : -1}
-                          className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface"
+                          className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface disabled:opacity-50"
                         >
                           <Plus size={14} strokeWidth={2.2} />
                         </button>
@@ -201,9 +203,10 @@ export default function CartDrawer() {
 
                       <button
                         onClick={() => remove(item.slug)}
+                        disabled={item.pending}
                         aria-label={"Remove " + item.name}
                         tabIndex={open ? 0 : -1}
-                        className="flex h-9 w-9 items-center justify-center text-muted transition-colors hover:text-primary"
+                        className="flex h-9 w-9 items-center justify-center text-muted transition-colors hover:text-primary disabled:opacity-50"
                       >
                         <Trash2 size={16} strokeWidth={1.8} />
                       </button>

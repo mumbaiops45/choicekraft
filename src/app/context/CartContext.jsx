@@ -203,11 +203,34 @@ export function CartProvider({ children }) {
         return { ok: true };
       }
 
-      return run((token) =>
+      // Show the line now rather than once the server has answered. Adding and
+      // then re-reading the cart are two round trips, and until both finish the
+      // drawer would sit on "Your cart is empty". The re-read that follows
+      // swaps this for the server's copy, with the real item id.
+      setServerItems((current) => {
+        const found = current.find((i) => i.slug === product.slug);
+        if (found) {
+          return current.map((i) =>
+            i.slug === product.slug ? { ...i, qty: i.qty + qty } : i
+          );
+        }
+        return [
+          ...current,
+          { ...toLocal(product, qty), itemId: "", pending: true },
+        ];
+      });
+
+      const result = await run((token) =>
         cartService.addToCart(token, { productId: product.id, quantity: qty })
       );
+
+      // The server refused it (out of stock, ...): re-read so the line shown
+      // above goes away. `run` has already put the reason in `error`.
+      if (!result.ok) await loadServerCart();
+
+      return result;
     },
-    [isAuthenticated, run]
+    [isAuthenticated, run, loadServerCart]
   );
 
   const setQty = useCallback(
@@ -222,7 +245,8 @@ export function CartProvider({ children }) {
       }
 
       const item = findItem(slug);
-      if (!item) return { ok: false };
+      // A line just added is on screen before the server has given it an id.
+      if (!item?.itemId) return { ok: false };
 
       // The backend has no "quantity 0" — that is a removal.
       return qty <= 0
@@ -240,7 +264,7 @@ export function CartProvider({ children }) {
       }
 
       const item = findItem(slug);
-      if (!item) return { ok: false };
+      if (!item?.itemId) return { ok: false };
       return run((token) => cartService.removeCartItem(token, item.itemId));
     },
     [isAuthenticated, findItem, run]
