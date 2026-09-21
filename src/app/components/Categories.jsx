@@ -66,15 +66,24 @@ export default async function Categories() {
                 <span className="absolute inset-x-0 bottom-0 h-[4px] w-0 bg-primary transition-all duration-500 ease-out group-hover:w-full" />
               </div>
 
-              <div className="flex flex-1 flex-col p-4 lg:p-5">
+              <div className="flex flex-1 flex-col items-center justify-center p-4 text-center lg:p-5">
                 <h3 className="text-[14px] font-bold uppercase tracking-[0.8px] text-ink transition-colors group-hover:text-primary lg:text-[15px]">
                   {category.name}
                 </h3>
-                {category.tagline && (
-                  <p className="mt-1.5 text-[12px] leading-5 text-muted">
-                    {category.tagline}
-                  </p>
-                )}
+
+                {/* Visual affordance only — the whole card is already the
+                    link, so this is not its own interactive element. */}
+                <span
+                  aria-hidden="true"
+                  className="mt-4 inline-flex items-center gap-1.5 border border-primary bg-primary px-4 py-2 text-[11px] font-semibold uppercase tracking-[1.5px] text-primary-foreground transition-colors duration-300 group-hover:border-secondary group-hover:bg-secondary group-hover:text-secondary-foreground"
+                >
+                  Shop Now
+                  <ArrowRight
+                    size={13}
+                    strokeWidth={2.2}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
+                </span>
               </div>
             </Link>
           </Reveal>

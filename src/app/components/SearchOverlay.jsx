@@ -6,6 +6,7 @@ import { Search, X, CornerDownLeft } from "lucide-react";
 import { formatINR } from "@/lib/formatters/currency";
 import { useCategoryStore } from "../store/CategoryStore";
 import useProductSearch from "../hooks/useProductSearch";
+import useScrollLock from "../hooks/useScrollLock";
 
 const MAX_RESULTS = 8;
 
@@ -14,11 +15,11 @@ export default function SearchOverlay({ open, onClose }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
 
+  useScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
 
@@ -26,7 +27,6 @@ export default function SearchOverlay({ open, onClose }) {
     const t = setTimeout(() => inputRef.current?.focus(), 120);
 
     return () => {
-      document.body.style.overflow = previous;
       document.removeEventListener("keydown", onKey);
       clearTimeout(t);
     };

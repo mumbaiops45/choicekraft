@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Lock,
   CreditCard,
+  Gift,
 } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import { useAuth } from "../store/AuthStore";
@@ -53,6 +54,10 @@ export default function CheckoutPage() {
     useAuth();
   const cart = useCart();
 
+  // Two real steps, not just a scroll: address first, payment only once
+  // an address is confirmed. Keeps the pay button from ever being visible
+  // before there is somewhere to ship to.
+  const [step, setStep] = useState("address");
   const [addresses, setAddresses] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [preview, setPreview] = useState(null);
@@ -295,6 +300,23 @@ export default function CheckoutPage() {
   const field =
     "w-full border border-line px-4 py-3 text-[14px] text-ink outline-none transition-colors placeholder:text-muted focus:border-primary";
 
+  const selectedAddress =
+    addresses.find((address) => address.id === selectedId) || null;
+
+  // Switching steps is a state flip, not a real navigation, so the browser
+  // never resets scroll on its own — without this, whoever scrolled down to
+  // reach "Continue to payment" lands on the next step already scrolled past
+  // its heading.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
+  const goToPayment = () => {
+    if (!selectedId || !preview) return;
+    setError("");
+    setStep("payment");
+  };
+
   if (restoring || loading) {
     return (
       <>
@@ -367,6 +389,18 @@ export default function CheckoutPage() {
       <PageHeader title="Checkout" crumb="CHECKOUT" />
 
       <div className="mx-auto max-w-[1510px] px-6 py-14">
+        <ol className="mb-8 flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[1.5px]">
+          <li className={step === "address" ? "text-primary" : "text-muted"}>
+            1. Address
+          </li>
+          <span className="text-line" aria-hidden="true">
+            —
+          </span>
+          <li className={step === "payment" ? "text-primary" : "text-muted"}>
+            2. Payment
+          </li>
+        </ol>
+
         {error && (
           <div
             role="status"
@@ -383,14 +417,54 @@ export default function CheckoutPage() {
 
         <div className="grid gap-10 lg:grid-cols-[1fr_380px] lg:gap-12">
           {/* -------------------- Addresses -------------------- */}
-          <section>
-            <h2 className="flex items-center gap-2.5 text-[15px] font-bold uppercase tracking-[1.5px] text-ink">
-              <MapPin size={18} strokeWidth={2} className="text-primary" />
-              Delivery address
-            </h2>
-            <span className="mt-3 block h-[2px] w-9 bg-primary" />
+          {step === "payment" ? (
+            <section>
+              <h2 className="flex items-center gap-2.5 text-[15px] font-bold uppercase tracking-[1.5px] text-ink">
+                <MapPin size={18} strokeWidth={2} className="text-primary" />
+                Delivery address
+              </h2>
+              <span className="mt-3 block h-[2px] w-9 bg-primary" />
 
-            {addresses.length > 0 && (
+              {selectedAddress && (
+                <div className="mt-6 flex gap-4 border border-line bg-white p-5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-bold text-ink">
+                      {selectedAddress.name}
+                      <span className="ml-2 text-[11px] font-semibold uppercase tracking-[1px] text-muted">
+                        {selectedAddress.addressType}
+                      </span>
+                      {selectedAddress.isDefault && (
+                        <span className="ml-2 bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase tracking-[1px] text-secondary-foreground">
+                          Default
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-1 text-[13px] leading-6 text-muted">
+                      {selectedAddress.oneLine}
+                    </p>
+                    <p className="mt-0.5 text-[13px] text-muted">
+                      {selectedAddress.phone}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStep("address")}
+                    className="h-fit shrink-0 text-[12px] font-semibold text-primary hover:underline"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
+            </section>
+          ) : (
+            <section>
+              <h2 className="flex items-center gap-2.5 text-[15px] font-bold uppercase tracking-[1.5px] text-ink">
+                <MapPin size={18} strokeWidth={2} className="text-primary" />
+                Delivery address
+              </h2>
+              <span className="mt-3 block h-[2px] w-9 bg-primary" />
+
+              {addresses.length > 0 && (
               <ul className="mt-6 space-y-3">
                 {addresses.map((address) => {
                   const active = address.id === selectedId;
@@ -588,7 +662,8 @@ export default function CheckoutPage() {
                 </div>
               </form>
             )}
-          </section>
+            </section>
+          )}
 
           {/* -------------------- Summary -------------------- */}
           <aside className="lg:sticky lg:top-28 lg:self-start">
@@ -641,61 +716,79 @@ export default function CheckoutPage() {
                     </div>
                   </dl>
 
-                  <fieldset className="mt-6 border-t border-line pt-5">
-                    <legend className="text-[13px] font-bold uppercase tracking-[1px] text-ink">
-                      Payment method
-                    </legend>
+                  {/* Only shown once a gift is actually attached — eligible
+                      alone is not enough if admin has not picked one. */}
+                  {preview.freeGift?.eligible && preview.freeGift?.productName ? (
+                    <p className="mt-4 flex items-center gap-2.5 border border-line bg-surface p-3.5 text-[13px] leading-6 text-ink-soft">
+                      <Gift
+                        size={16}
+                        strokeWidth={1.8}
+                        className="shrink-0 text-primary"
+                      />
+                      Free gift with this order:{" "}
+                      <span className="font-semibold text-ink">
+                        {preview.freeGift.productName}
+                      </span>
+                    </p>
+                  ) : null}
 
-                    <div className="mt-4 space-y-2.5">
-                      {paymentOptions.map(
-                        ({ id, Icon, label, hint, available, reason }) => {
-                        const active = method === id;
-                        return (
-                          <label
-                            key={id}
-                            className={
-                              "flex items-start gap-3 border p-3.5 transition-colors " +
-                              (!available
-                                ? "cursor-not-allowed border-line opacity-60"
-                                : active
-                                  ? "cursor-pointer border-primary bg-surface"
-                                  : "cursor-pointer border-line hover:border-line-strong")
-                            }
-                          >
-                            <input
-                              type="radio"
-                              name="payment-method"
-                              value={id}
-                              checked={active}
-                              disabled={!available}
-                              onChange={() => {
-                                setMethod(id);
-                                setError("");
-                              }}
-                              className="mt-1 h-4 w-4 accent-[var(--primary)]"
-                            />
-                            <Icon
-                              size={17}
-                              strokeWidth={1.8}
+                  {step === "payment" && (
+                    <fieldset className="mt-6 border-t border-line pt-5">
+                      <legend className="text-[13px] font-bold uppercase tracking-[1px] text-ink">
+                        Payment method
+                      </legend>
+
+                      <div className="mt-4 space-y-2.5">
+                        {paymentOptions.map(
+                          ({ id, Icon, label, hint, available, reason }) => {
+                          const active = method === id;
+                          return (
+                            <label
+                              key={id}
                               className={
-                                "mt-0.5 shrink-0 " +
-                                (active ? "text-primary" : "text-muted")
+                                "flex items-start gap-3 border p-3.5 transition-colors " +
+                                (!available
+                                  ? "cursor-not-allowed border-line opacity-60"
+                                  : active
+                                    ? "cursor-pointer border-primary bg-surface"
+                                    : "cursor-pointer border-line hover:border-line-strong")
                               }
-                            />
-                            <span className="min-w-0">
-                              <span className="block text-[13px] font-semibold text-ink">
-                                {label}
+                            >
+                              <input
+                                type="radio"
+                                name="payment-method"
+                                value={id}
+                                checked={active}
+                                disabled={!available}
+                                onChange={() => {
+                                  setMethod(id);
+                                  setError("");
+                                }}
+                                className="mt-1 h-4 w-4 accent-[var(--primary)]"
+                              />
+                              <Icon
+                                size={17}
+                                strokeWidth={1.8}
+                                className={
+                                  "mt-0.5 shrink-0 " +
+                                  (active ? "text-primary" : "text-muted")
+                                }
+                              />
+                              <span className="min-w-0">
+                                <span className="block text-[13px] font-semibold text-ink">
+                                  {label}
+                                </span>
+                                <span className="block text-[12px] leading-5 text-muted">
+                                  {available ? hint : reason || hint}
+                                </span>
                               </span>
-                              <span className="block text-[12px] leading-5 text-muted">
-                                {available ? hint : reason || hint}
-                              </span>
-                            </span>
-                          </label>
-                        );
-                      }
-                      )}
-                    </div>
-                  </fieldset>
+                            </label>
+                          );
+                        }
+                        )}
+                      </div>
+                    </fieldset>
+                  )}
 
                   <p className="mt-5 flex items-baseline justify-between border-t border-line pt-5">
                     <span className="text-[14px] font-semibold uppercase tracking-[1px] text-ink">
@@ -706,18 +799,31 @@ export default function CheckoutPage() {
                     </span>
                   </p>
 
-                  <button
-                    onClick={pay}
-                    disabled={paying || busy || !selectedId}
-                    className="mt-6 w-full bg-primary py-4 text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
-                  >
-                    {paying ? "OPENING PAYMENT…" : "PAY NOW"}
-                  </button>
+                  {step === "address" ? (
+                    <button
+                      type="button"
+                      onClick={goToPayment}
+                      disabled={!selectedId || !preview || busy}
+                      className="mt-6 w-full bg-primary py-4 text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
+                    >
+                      CONTINUE TO PAYMENT
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={pay}
+                        disabled={paying || busy || !selectedId}
+                        className="mt-6 w-full bg-primary py-4 text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
+                      >
+                        {paying ? "OPENING PAYMENT…" : "PAY NOW"}
+                      </button>
 
-                  <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-muted">
-                    <Lock size={12} strokeWidth={2} />
-                    Secured by Razorpay
-                  </p>
+                      <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-muted">
+                        <Lock size={12} strokeWidth={2} />
+                        Secured by Razorpay
+                      </p>
+                    </>
+                  )}
                 </>
               )}
             </div>

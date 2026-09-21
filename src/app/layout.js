@@ -9,7 +9,12 @@ import { CartProvider } from "./context/CartContext";
 import { CategoryProvider } from "./store/CategoryStore";
 import { AuthProvider } from "./store/AuthStore";
 import { WishlistProvider } from "./store/WishlistStore";
+import { SettingsProvider } from "./store/SettingsStore";
 import { getCategoriesSafe } from "@/lib/services/categoryService";
+import {
+  getShippingSettingsSafe,
+  getGiftSettingsSafe,
+} from "@/lib/services/settingService";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -29,6 +34,12 @@ export default async function RootLayout({ children }) {
   // the product browser sidebar share one list instead of each refetching it.
   const categories = await getCategoriesSafe();
 
+  // Same idea for shipping and the free gift: one live read here each,
+  // shared by the cart drawer, product page and FAQ copy, instead of each
+  // hardcoding its own number.
+  const shipping = await getShippingSettingsSafe();
+  const gift = await getGiftSettingsSafe();
+
   return (
     <html
       lang="en"
@@ -46,13 +57,15 @@ export default async function RootLayout({ children }) {
           <WelcomeGate />
           <WishlistProvider>
             <CategoryProvider initialCategories={categories}>
-              <CartProvider>
-                <Navbar />
-                <main className="flex-1">{children}</main>
-                <Footer />
-                <FloatingActions />
-                <ScrollToTop />
-              </CartProvider>
+              <SettingsProvider initialShipping={shipping} initialGift={gift}>
+                <CartProvider>
+                  <Navbar />
+                  <main className="flex-1">{children}</main>
+                  <Footer />
+                  <FloatingActions />
+                  <ScrollToTop />
+                </CartProvider>
+              </SettingsProvider>
             </CategoryProvider>
           </WishlistProvider>
         </AuthProvider>

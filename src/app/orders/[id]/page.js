@@ -8,7 +8,8 @@ import {
   MapPin,
   Lock,
   XCircle,
-  Banknote,
+  Gift,
+  Truck,
 } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import { useAuth } from "../../store/AuthStore";
@@ -237,19 +238,6 @@ export default function OrderDetailPage({ params }) {
             </p>
           </div>
 
-          {order.paymentMethod === "cod" &&
-            order.paymentStatus === "pending" && (
-              <p className="mt-4 flex items-start gap-2.5 border border-line bg-surface p-3.5 text-[13px] leading-6 text-ink-soft">
-                <Banknote
-                  size={16}
-                  strokeWidth={1.8}
-                  className="mt-0.5 shrink-0 text-primary"
-                />
-                Please keep {formatINR(order.total)} ready — the courier
-                collects it on delivery.
-              </p>
-            )}
-
           {error && (
             <p className="mt-4 border-l-[3px] border-primary bg-surface p-3.5 text-[13px] leading-6 text-ink-soft">
               {error}
@@ -366,6 +354,15 @@ export default function OrderDetailPage({ params }) {
               })}
             </ol>
           )}
+
+          {order.tracking && (
+            <p className="mt-5 flex items-center gap-2.5 border-t border-line pt-5 text-[13px] leading-6 text-ink-soft">
+              <Truck size={16} strokeWidth={1.8} className="shrink-0 text-primary" />
+              Tracking:{" "}
+              <span className="font-semibold text-ink">{order.tracking.awbCode}</span>
+              {order.tracking.courierName && ` via ${order.tracking.courierName}`}
+            </p>
+          )}
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
@@ -405,6 +402,34 @@ export default function OrderDetailPage({ params }) {
                   </p>
                 </li>
               ))}
+
+              {order.giftProductName && (
+                <li className="flex items-center gap-4 bg-surface px-6 py-5">
+                  {order.giftProductImage ? (
+                    <div className="h-[80px] w-[64px] shrink-0 overflow-hidden bg-white">
+                      <img
+                        src={order.giftProductImage}
+                        alt={order.giftProductName}
+                        loading="lazy"
+                        className="h-full w-full object-contain p-1"
+                      />
+                    </div>
+                  ) : (
+                    <Gift
+                      size={24}
+                      strokeWidth={1.6}
+                      className="h-[80px] w-[64px] shrink-0 text-primary"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-bold leading-5 text-ink">
+                      {order.giftProductName}
+                    </p>
+                    <p className="mt-1.5 text-[13px] text-muted">Free gift</p>
+                  </div>
+                  <p className="shrink-0 text-[15px] font-bold text-ink">Free</p>
+                </li>
+              )}
             </ul>
           </section>
 

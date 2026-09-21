@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { faqs } from "../data/policies";
+import { getFaqs } from "../data/policies";
+import { useSettingsStore } from "../store/SettingsStore";
 import Reveal from "./Reveal";
 
 export default function FaqAccordion() {
   // First question of the first group starts open.
   const [open, setOpen] = useState("0-0");
+  const shipping = useSettingsStore();
+  const faqs = getFaqs(shipping);
 
   return (
     <div className="space-y-12">

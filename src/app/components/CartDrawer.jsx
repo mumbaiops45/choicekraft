@@ -14,13 +14,16 @@ import {
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../store/AuthStore";
+import { useSettingsStore } from "../store/SettingsStore";
 import { formatINR } from "@/lib/formatters/currency";
-import { amountToFreeShipping } from "@/lib/shipping";
+import useScrollLock from "../hooks/useScrollLock";
 
 export default function CartDrawer() {
   const { items, count, subtotal, saved, open, setOpen, setQty, remove, error, clearError } =
     useCart();
   const { isAuthenticated, restoring, openAccount, closeAccount } = useAuth();
+  const { amountToFreeShipping, giftEligibleFor, amountToFreeGift, freeGiftProduct } =
+    useSettingsStore();
   const router = useRouter();
 
   // Checking out needs an account: every route it touches (/checkout,
@@ -44,18 +47,17 @@ export default function CartDrawer() {
   };
 
   const toFreeShipping = amountToFreeShipping(subtotal);
+  const giftUnlocked = giftEligibleFor(subtotal);
+  const toFreeGift = amountToFreeGift(subtotal);
 
-  // Lock background scroll and close on Escape while the drawer is open
+  useScrollLock(open);
+
+  // Close on Escape while the drawer is open
   useEffect(() => {
     if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e) => e.key === "Escape" && setOpen(false);
     document.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = previous;
-      document.removeEventListener("keydown", onKey);
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, setOpen]);
 
   return (
@@ -237,6 +239,18 @@ export default function CartDrawer() {
                     formatINR(toFreeShipping) +
                     " more for free delivery."}
               </p>
+
+              {/* Only shown when a gift is actually configured — no vague
+                  "unlock a gift" promise with nothing behind it. */}
+              {freeGiftProduct && (
+                <p className="mt-1 text-[12px] leading-5 text-muted">
+                  {giftUnlocked
+                    ? `You've unlocked a free gift: ${freeGiftProduct.name}!`
+                    : "Add " +
+                      formatINR(toFreeGift) +
+                      " more for a free gift."}
+                </p>
+              )}
 
               <Link
                 href="/checkout"

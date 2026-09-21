@@ -195,7 +195,7 @@ export default function OffersSection({ offers = [] }) {
             <button
               onClick={() => go(index - 1)}
               aria-label="Previous offer"
-              className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 text-white opacity-0 backdrop-blur-sm transition hover:bg-primary focus:opacity-100 group-hover:opacity-100 sm:left-5 sm:h-12 sm:w-12"
+              className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition hover:bg-primary sm:left-5 sm:h-12 sm:w-12 lg:opacity-0 lg:focus:opacity-100 lg:group-hover:opacity-100"
             >
               <ChevronLeft size={22} strokeWidth={1.8} />
             </button>
@@ -203,7 +203,7 @@ export default function OffersSection({ offers = [] }) {
             <button
               onClick={() => go(index + 1)}
               aria-label="Next offer"
-              className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 text-white opacity-0 backdrop-blur-sm transition hover:bg-primary focus:opacity-100 group-hover:opacity-100 sm:right-5 sm:h-12 sm:w-12"
+              className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition hover:bg-primary sm:right-5 sm:h-12 sm:w-12 lg:opacity-0 lg:focus:opacity-100 lg:group-hover:opacity-100"
             >
               <ChevronRight size={22} strokeWidth={1.8} />
             </button>

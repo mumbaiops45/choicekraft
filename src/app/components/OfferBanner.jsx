@@ -1,12 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Sparkles, Truck, Gift, Percent } from "lucide-react";
-
-const items = [
-  { icon: Percent, text: "MEGA SALE — UP TO 50% OFF STATIONERY" },
-  { icon: Truck, text: "FREE SHIPPING ABOVE ₹1000" },
-  { icon: Gift, text: "FREE GIFTS ABOVE ₹500" },
-  { icon: Sparkles, text: "NEW SEASON NOTE BOOKS IN STOCK" },
-];
+import { useSettingsStore } from "../store/SettingsStore";
 
 /**
  * Attention-grabbing offer ticker.
@@ -16,6 +12,15 @@ const items = [
  * or a gap, just a continuous strip.
  */
 export default function OfferBanner() {
+  const { freeShippingThreshold } = useSettingsStore();
+
+  const items = [
+    { icon: Percent, text: "MEGA SALE — UP TO 50% OFF STATIONERY" },
+    { icon: Truck, text: `FREE SHIPPING ABOVE ₹${freeShippingThreshold}` },
+    { icon: Gift, text: "FREE GIFTS ABOVE ₹500" },
+    { icon: Sparkles, text: "NEW SEASON NOTE BOOKS IN STOCK" },
+  ];
+
   return (
     <Link
       href="/products"

@@ -20,9 +20,9 @@ const PAYMENT_STATUS_LABELS = {
   refunded: "Refunded",
 };
 
+// Online only — this store has never offered cash on delivery.
 const PAYMENT_METHOD_LABELS = {
   online: "Paid online",
-  cod: "Cash on delivery",
 };
 
 /** The backend only lets a customer cancel before dispatch. */
@@ -71,6 +71,10 @@ export function formatOrder(raw) {
     subtotal: Number(raw.subtotal) || 0,
     shipping: Number(raw.shipping) || 0,
     total: Number(raw.total) || 0,
+    // Present only when this order crossed the free-gift threshold at the
+    // moment it was paid for - empty string means no gift was attached.
+    giftProductName: raw.giftProductName || "",
+    giftProductImage: raw.giftProductImage || "",
     orderStatus: raw.orderStatus || "confirmed",
     orderStatusLabel:
       ORDER_STATUS_LABELS[raw.orderStatus] || raw.orderStatus || "",
@@ -88,6 +92,16 @@ export function formatOrder(raw) {
     canCancel: CUSTOMER_CANCELLABLE.includes(raw.orderStatus),
     razorpayOrderId: raw.razorpayOrderId || "",
     razorpayPaymentId: raw.razorpayPaymentId || "",
+    // Only ever shown once a courier is actually assigned - internal
+    // fulfillment failures (bad pincode, Shiprocket outage) are an admin
+    // concern, never surfaced to the customer as an error.
+    tracking:
+      raw.shiprocket?.status === "created" && raw.shiprocket?.awbCode
+        ? {
+            awbCode: raw.shiprocket.awbCode,
+            courierName: raw.shiprocket.courierName || "",
+          }
+        : null,
     totalItems: Array.isArray(raw.items)
       ? raw.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
       : 0,
@@ -136,9 +150,9 @@ export function formatCheckout(raw) {
         }))
       : [],
     address: formatAddress(raw.address) || null,
-    // Newer backends decide COD availability themselves and send the options
-    // to render. Older ones do not, so the checkout screen falls back to its
-    // own list.
+    // The backend decides which methods are offered and sends them to
+    // render, so this page never has to know the rules itself. Falls back
+    // to a bare "online" entry if an older backend sends nothing.
     paymentMethods: Array.isArray(raw.paymentMethods)
       ? raw.paymentMethods.map((method) => ({
           id: method.id,
@@ -150,5 +164,15 @@ export function formatCheckout(raw) {
     subtotal: Number(raw.pricing?.subtotal) || 0,
     shippingFee: Number(raw.pricing?.shipping) || 0,
     total: Number(raw.pricing?.total) || 0,
+    // What this cart will get for crossing the free-gift threshold, if
+    // anything - eligible can be true with no product name if admin has
+    // not configured a gift yet.
+    freeGift: {
+      threshold: Number(raw.freeGift?.threshold) || 0,
+      eligible: Boolean(raw.freeGift?.eligible),
+      productName: raw.freeGift?.productName || "",
+      productImage: raw.freeGift?.productImage || "",
+      amountToUnlock: Number(raw.freeGift?.amountToUnlock) || 0,
+    },
   };
 }

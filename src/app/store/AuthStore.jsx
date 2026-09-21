@@ -75,6 +75,15 @@ export function AuthProvider({ children }) {
     writeStoredToken(token);
   }, []);
 
+  // A stable identity matters here: pages depend on it in useEffect/useCallback
+  // arrays (checkout's address loader, the cart, the wishlist store). Defining
+  // it inline inside the `value` memo below would hand out a new function
+  // every time that memo recomputes — which happens on things as unrelated as
+  // the sign-in panel opening — and those effects would refire and silently
+  // refetch, racing with and clobbering whatever local state (like an open
+  // "add address" form) the page had at that moment.
+  const getToken = useCallback(() => tokenRef.current, []);
+
   // Restore an existing session once, on mount.
   useEffect(() => {
     let cancelled = false;
@@ -313,7 +322,7 @@ export function AuthProvider({ children }) {
       openAccount,
       closeAccount,
       /** Current token without subscribing to it. */
-      getToken: () => tokenRef.current,
+      getToken,
     }),
     [
       user,
@@ -330,6 +339,7 @@ export function AuthProvider({ children }) {
       logoutEverywhere,
       reloadUser,
       authedCall,
+      getToken,
     ]
   );
 

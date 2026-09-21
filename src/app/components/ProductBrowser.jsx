@@ -193,7 +193,9 @@ export default function ProductBrowser({ products, activeCategory }) {
     <div className="mx-auto max-w-[1510px] px-6 py-14">
       <div className="grid gap-10 lg:grid-cols-[280px_1fr] lg:gap-12">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:block">{sidebar}</aside>
+        <aside className="hidden lg:sticky lg:top-28 lg:block lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          {sidebar}
+        </aside>
 
         <div>
           {/* Toolbar */}

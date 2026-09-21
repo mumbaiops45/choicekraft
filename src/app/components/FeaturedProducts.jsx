@@ -56,40 +56,22 @@ export default function FeaturedProducts({ products = [] }) {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="mx-auto max-w-[1510px] px-6">
-        <Reveal className="flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-bold uppercase leading-[1.2] tracking-[0.5px] text-ink lg:text-[40px]">
-              Premium <span className="text-primary">note books</span>
-            </h2>
-            <p className="mt-5 max-w-[520px] leading-8 text-muted">
-              Printed and bound in our own facility, on 60 GSM paper, with covers
-              you will actually want to keep.
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => scrollTo(index - 1)}
-              aria-label="Previous product"
-              className="flex h-11 w-11 items-center justify-center border border-line bg-white text-ink transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              <ChevronLeft size={20} strokeWidth={2} />
-            </button>
-            <button
-              onClick={() => scrollTo(index + 1)}
-              aria-label="Next product"
-              className="flex h-11 w-11 items-center justify-center border border-line bg-white text-ink transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              <ChevronRight size={20} strokeWidth={2} />
-            </button>
-          </div>
+        <Reveal className="text-center">
+          <h2 className="text-3xl font-bold uppercase leading-[1.2] tracking-[0.5px] text-ink lg:text-[40px]">
+            Premium <span className="text-primary">note books</span>
+          </h2>
+          <p className="mx-auto mt-5 max-w-[520px] leading-8 text-muted">
+            Printed and bound in our own facility, on 60 GSM paper, with covers
+            you will actually want to keep.
+          </p>
         </Reveal>
 
-        {/* Rail — snaps card to card */}
-        <div
-          ref={trackRef}
-          className="mt-14 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
+        {/* Rail — snaps card to card, prev/next float at its side corners */}
+        <div className="relative mt-14">
+          <div
+            ref={trackRef}
+            className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
           {products.map((product, i) => {
             const off = product.mrp
               ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
@@ -173,6 +155,22 @@ export default function FeaturedProducts({ products = [] }) {
               </Reveal>
             );
           })}
+          </div>
+
+          <button
+            onClick={() => scrollTo(index - 1)}
+            aria-label="Previous product"
+            className="absolute left-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center border border-line bg-white text-ink shadow-[0_8px_20px_rgba(0,0,0,0.12)] transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            <ChevronLeft size={20} strokeWidth={2} />
+          </button>
+          <button
+            onClick={() => scrollTo(index + 1)}
+            aria-label="Next product"
+            className="absolute right-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center border border-line bg-white text-ink shadow-[0_8px_20px_rgba(0,0,0,0.12)] transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            <ChevronRight size={20} strokeWidth={2} />
+          </button>
         </div>
 
         <Reveal className="mt-12 text-center">

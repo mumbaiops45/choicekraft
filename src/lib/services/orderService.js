@@ -42,29 +42,6 @@ export async function getMyOrder(token, id, options = {}) {
 }
 
 /**
- * Places a cash-on-delivery order.
- *
- *   POST /orders  body: { addressId }  ->  201 { data: { order } }
- *
- * The backend validates the cart, deducts stock in a transaction, creates the
- * order with paymentStatus "pending", and empties the cart. It answers 409
- * when COD is switched off or the order is over the value cap.
- *
- * @returns {Promise<{order: object|null, message: string}>}
- */
-export async function placeCodOrder(token, addressId, options = {}) {
-  const response = await api.post(
-    ENDPOINTS.orders.cod,
-    { addressId },
-    authed(token, options)
-  );
-  return {
-    order: formatOrder(response?.data?.order),
-    message: response?.message || "",
-  };
-}
-
-/**
  * The fixed list of cancellation reasons, straight from the backend.
  *
  * Kept server-side so the codes the dropdown offers are exactly the ones
@@ -117,7 +94,6 @@ export async function cancelOrder(token, id, choice, options = {}) {
 export const orderService = {
   getMyOrders,
   getMyOrder,
-  placeCodOrder,
   getCancelReasons,
   cancelOrder,
 };

@@ -15,6 +15,7 @@ import { formatINR } from "@/lib/formatters/currency";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../store/AuthStore";
 import { useWishlist } from "../store/WishlistStore";
+import { useSettingsStore } from "../store/SettingsStore";
 import Reveal from "./Reveal";
 
 /**
@@ -29,6 +30,7 @@ export default function ProductDetail({ product }) {
   const { add } = useCart();
   const { isAuthenticated } = useAuth();
   const wishlist = useWishlist();
+  const { freeShippingThreshold } = useSettingsStore();
 
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
@@ -192,7 +194,7 @@ export default function ProductDetail({ product }) {
           <div className="mt-8 grid gap-3 border-t border-line pt-6 sm:grid-cols-2">
             <p className="flex items-center gap-2.5 text-[13px] text-ink-soft">
               <Truck size={16} strokeWidth={1.8} className="shrink-0 text-primary" />
-              Free shipping above ₹1000
+              Free shipping above ₹{freeShippingThreshold}
             </p>
             <p className="flex items-center gap-2.5 text-[13px] text-ink-soft">
               <RotateCcw size={16} strokeWidth={1.8} className="shrink-0 text-primary" />

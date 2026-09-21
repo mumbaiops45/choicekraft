@@ -6,6 +6,7 @@ import { X, Heart, Trash2, ShoppingBag, AlertCircle } from "lucide-react";
 import { useWishlist } from "../store/WishlistStore";
 import { useCart } from "../context/CartContext";
 import { formatINR } from "@/lib/formatters/currency";
+import useScrollLock from "../hooks/useScrollLock";
 
 /**
  * Saved-items drawer, opened from the navbar heart.
@@ -18,16 +19,13 @@ export default function WishlistDrawer({ open, onClose }) {
   const cart = useCart();
   const [error, setError] = useState("");
 
+  useScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = previous;
-      document.removeEventListener("keydown", onKey);
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   useEffect(() => {

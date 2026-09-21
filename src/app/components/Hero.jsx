@@ -119,7 +119,7 @@ export default function Hero({ banners = [] }) {
           <button
             onClick={() => go(index - 1)}
             aria-label="Previous slide"
-            className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 text-white opacity-0 backdrop-blur-sm transition hover:bg-primary focus:opacity-100 group-hover:opacity-100 lg:left-10 lg:h-14 lg:w-14"
+            className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition hover:bg-primary lg:left-10 lg:h-14 lg:w-14 lg:opacity-0 lg:focus:opacity-100 lg:group-hover:opacity-100"
           >
             <ChevronLeft size={26} strokeWidth={1.8} />
           </button>
@@ -127,7 +127,7 @@ export default function Hero({ banners = [] }) {
           <button
             onClick={() => go(index + 1)}
             aria-label="Next slide"
-            className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 text-white opacity-0 backdrop-blur-sm transition hover:bg-primary focus:opacity-100 group-hover:opacity-100 lg:right-10 lg:h-14 lg:w-14"
+            className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition hover:bg-primary lg:right-10 lg:h-14 lg:w-14 lg:opacity-0 lg:focus:opacity-100 lg:group-hover:opacity-100"
           >
             <ChevronRight size={26} strokeWidth={1.8} />
           </button>

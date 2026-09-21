@@ -26,10 +26,9 @@ import {
   changePassword,
   forgotPassword,
   resetPassword,
-  sendVerification,
   updateMyProfile,
-  verifyEmail,
 } from "@/lib/services/authService";
+import useScrollLock from "../hooks/useScrollLock";
 
 /**
  * Account drawer.
@@ -74,23 +73,17 @@ export default function AccountPanel({ open, onClose }) {
     password: "",
     confirmPassword: "",
   });
-  // Email verification, same two-step shape: ask for a token, then submit it.
-  const [verifyToken, setVerifyToken] = useState("");
-  const [verifySent, setVerifySent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  useScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = previous;
-      document.removeEventListener("keydown", onKey);
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   // Closing the panel clears whatever was typed or reported.
@@ -109,8 +102,6 @@ export default function AccountPanel({ open, onClose }) {
         password: "",
         confirmPassword: "",
       });
-      setVerifyToken("");
-      setVerifySent(false);
       setShowPassword(false);
     }
   }, [open]);
@@ -319,51 +310,6 @@ export default function AccountPanel({ open, onClose }) {
     }
   };
 
-  // ----------------------------------------------------------------
-  // Email verification
-  // ----------------------------------------------------------------
-
-  const requestVerification = async () => {
-    if (busy) return;
-
-    setBusy(true);
-    setNotice(null);
-    try {
-      const result = await authedCall((token) => sendVerification(token));
-      setVerifySent(true);
-      done(result.message || "Verification link has been generated.");
-    } catch (err) {
-      fail(err?.message || "Could not send the verification link.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const submitVerification = async (e) => {
-    e.preventDefault();
-    if (busy) return;
-
-    if (!verifyToken.trim()) {
-      return fail("Enter the verification code you received.");
-    }
-
-    setBusy(true);
-    setNotice(null);
-    try {
-      // Public route — it identifies the account from the token itself, so no
-      // access token goes with it.
-      await verifyEmail(verifyToken.trim());
-      setVerifyToken("");
-      setVerifySent(false);
-      await reloadUser();
-      done("Email verified.");
-    } catch (err) {
-      fail(err?.message || "Could not verify your email.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const signOut = async () => {
     setBusy(true);
     await logout();
@@ -500,65 +446,6 @@ export default function AccountPanel({ open, onClose }) {
                   )}
                 </div>
               </div>
-
-              {/* ---------------- Verify email ---------------- */}
-              {!user.isVerified && (
-                <div className="mt-4 border border-line bg-surface p-5">
-                  <p className="text-[13px] leading-6 text-ink-soft">
-                    Verify your email address so we can reach you about your
-                    orders.
-                  </p>
-
-                  {!verifySent ? (
-                    <button
-                      onClick={requestVerification}
-                      disabled={busy}
-                      tabIndex={open ? 0 : -1}
-                      className="mt-4 flex w-full items-center justify-center gap-2 border border-line bg-white py-3 text-[12px] font-semibold tracking-[1.5px] text-ink transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
-                    >
-                      <BadgeCheck size={15} strokeWidth={2} />
-                      {busy ? "SENDING…" : "SEND VERIFICATION"}
-                    </button>
-                  ) : (
-                    <form onSubmit={submitVerification} className="mt-4">
-                      <div className="relative">
-                        <KeyRound
-                          size={17}
-                          strokeWidth={1.8}
-                          className={iconClass}
-                        />
-                        <input
-                          type="text"
-                          required
-                          value={verifyToken}
-                          onChange={(e) => setVerifyToken(e.target.value)}
-                          placeholder="Verification code"
-                          aria-label="Verification code"
-                          tabIndex={open ? 0 : -1}
-                          className={field + " bg-white"}
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={busy}
-                        tabIndex={open ? 0 : -1}
-                        className={primaryButton + " mt-3"}
-                      >
-                        {busy ? "VERIFYING…" : "VERIFY EMAIL"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={requestVerification}
-                        disabled={busy}
-                        tabIndex={open ? 0 : -1}
-                        className="mt-3 w-full text-[12px] text-primary hover:underline disabled:opacity-60"
-                      >
-                        Send another code
-                      </button>
-                    </form>
-                  )}
-                </div>
-              )}
 
               {/* Tabs */}
               <div className="mt-6 grid grid-cols-2 border border-line">

@@ -5,11 +5,12 @@ import PageHeader from "../../components/PageHeader";
 import Reveal from "../../components/Reveal";
 import FaqAccordion from "../../components/FaqAccordion";
 import {
-  policies,
+  getPolicies,
   policyList,
   LAST_UPDATED,
   CONTACT,
 } from "../../data/policies";
+import { getShippingSettingsSafe } from "@/lib/services/settingService";
 
 export function generateStaticParams() {
   return policyList.map((policy) => ({ slug: policy.slug }));
@@ -41,6 +42,12 @@ export default async function PolicyPage({ params }) {
   if (!entry) notFound();
 
   const isFaq = slug === "faqs";
+
+  // Only the non-FAQ policies (shipping policy) quote a live shipping
+  // number, but fetching once here is simpler than branching on which
+  // page needs it.
+  const shipping = await getShippingSettingsSafe();
+  const policies = getPolicies(shipping);
   const policy = policies[slug];
   const sections = isFaq ? [] : policy.sections;
 

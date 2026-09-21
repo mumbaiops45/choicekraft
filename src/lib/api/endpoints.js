@@ -86,9 +86,6 @@ export const ENDPOINTS = {
 
   orders: {
     list: "/orders",
-    // Cash on delivery places the order directly: POST /orders.
-    // The online path goes through POST /payment/create-order instead.
-    cod: "/orders",
     // Declared before /orders/:id on the server, so it is a real route and
     // not an order id.
     cancelReasons: "/orders/cancel-reasons",
@@ -110,6 +107,12 @@ export const ENDPOINTS = {
     updateItem: (itemId) => `/cart/item/${encodeURIComponent(itemId)}`,
     removeItem: (itemId) => `/cart/item/${encodeURIComponent(itemId)}`,
     clear: "/cart",
+  },
+
+  settings: {
+    // Public — no auth. Same handlers as the admin routes, read-only.
+    shipping: "/settings/shipping",
+    gift: "/settings/gift",
   },
 };
 

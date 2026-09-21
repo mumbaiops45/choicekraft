@@ -6,16 +6,14 @@
 // legal advice. Have them reviewed, and check every figure against your actual
 // operations before launch.
 //
-// Delivery charges quoted below come from src/lib/shipping.js, which mirrors
-// what the backend actually charges. Never retype them — this file said
-// ₹1,999 in the FAQ and ₹499 in the shipping policy while the server was
-// charging on ₹500, so all three disagreed.
+// Delivery charges quoted below take a `shipping` argument ({ shippingCharge,
+// freeShippingThreshold }) instead of a hardcoded number. Never retype them —
+// this file said ₹1,999 in the FAQ and ₹499 in the shipping policy while the
+// server was charging ₹500, so all three disagreed. The caller (the policy
+// page, and FaqAccordion) fetches the live value from the Setting singleton
+// and passes it in, so this content can never drift from what checkout
+// actually charges again.
 // ---------------------------------------------------------------------------
-
-import {
-  FREE_SHIPPING_THRESHOLD,
-  SHIPPING_FLAT,
-} from "@/lib/shipping";
 
 export const LAST_UPDATED = "24 August 2026";
 
@@ -26,7 +24,8 @@ export const CONTACT = {
   place: "Maharashtra, India",
 };
 
-export const faqs = [
+/** @param {{ shippingCharge: number, freeShippingThreshold: number }} shipping */
+export const getFaqs = (shipping) => [
   {
     group: "Orders",
     items: [
@@ -53,7 +52,7 @@ export const faqs = [
     items: [
       {
         q: "How much does delivery cost?",
-        a: `Delivery is free on orders of ₹${FREE_SHIPPING_THRESHOLD} and above. Below that, a flat ₹${SHIPPING_FLAT} shipping charge is shown at checkout before you pay.`,
+        a: `Delivery is free on orders of ₹${shipping.freeShippingThreshold} and above. Below that, a flat ₹${shipping.shippingCharge} shipping charge is shown at checkout before you pay.`,
       },
       {
         q: "When will my order ship?",
@@ -121,7 +120,8 @@ export const faqs = [
   },
 ];
 
-export const policies = {
+/** @param {{ shippingCharge: number, freeShippingThreshold: number }} shipping */
+export const getPolicies = (shipping) => ({
   "privacy-policy": {
     title: "Privacy Policy",
     intro:
@@ -292,8 +292,8 @@ export const policies = {
       {
         heading: "Shipping charges",
         list: [
-          `A standard shipping fee of ₹${SHIPPING_FLAT} applies to orders below ₹${FREE_SHIPPING_THRESHOLD}.`,
-          `Free shipping is offered on orders with a cart value of ₹${FREE_SHIPPING_THRESHOLD} and above.`,
+          `A standard shipping fee of ₹${shipping.shippingCharge} applies to orders below ₹${shipping.freeShippingThreshold}.`,
+          `Free shipping is offered on orders with a cart value of ₹${shipping.freeShippingThreshold} and above.`,
           "Shipping charges, if applicable, will be displayed at checkout before payment confirmation.",
         ],
       },
@@ -341,7 +341,7 @@ export const policies = {
       },
     ],
   },
-};
+});
 
 export const policyList = [
   { slug: "faqs", title: "FAQs" },

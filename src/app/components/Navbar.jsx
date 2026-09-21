@@ -106,8 +106,9 @@ export default function Navbar() {
           (scrolled ? "" : "bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.06)]")
         }
       >
-        {/* Logo */}
-        <div className="flex w-[195px] shrink-0 items-center px-4 lg:w-[300px] lg:px-6">
+        {/* Logo — narrower and allowed to shrink below ~360px so it never
+            forces the wishlist/cart/menu tap targets to squeeze instead. */}
+        <div className="flex w-[150px] shrink items-center px-3 sm:w-[195px] sm:px-4 lg:w-[300px] lg:shrink-0 lg:px-6">
           <Link
             href="/"
             aria-label="ChoiceKraft home"
@@ -251,7 +252,7 @@ export default function Navbar() {
             <button
               onClick={() => setWishlistOpen(true)}
               aria-label={"Wishlist, " + wishlist.count + " items"}
-              className="relative flex h-full w-[52px] items-center justify-center"
+              className="relative flex h-full w-[52px] shrink-0 items-center justify-center"
             >
               <Heart size={23} strokeWidth={1.6} className="text-ink" />
               {wishlist.count > 0 && (
@@ -265,7 +266,7 @@ export default function Navbar() {
           <button
             onClick={() => setCartOpen(true)}
             aria-label={"Shopping cart, " + count + " items"}
-            className="relative flex h-full w-[60px] items-center justify-center"
+            className="relative flex h-full w-[60px] shrink-0 items-center justify-center"
           >
             <ShoppingBag size={24} strokeWidth={1.6} className="text-ink" />
             <span className="absolute right-2 top-4 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
@@ -275,7 +276,7 @@ export default function Navbar() {
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="flex h-full w-[60px] items-center justify-center"
+            className="flex h-full w-[60px] shrink-0 items-center justify-center"
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
           >
