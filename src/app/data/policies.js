@@ -18,7 +18,7 @@
 export const LAST_UPDATED = "24 August 2026";
 
 export const CONTACT = {
-  email: "support@choicekraft.com",
+  email: "choicekraft@gmail.com",
   phone: "+91 74001 81786",
   phoneHref: "tel:+917400181786",
   place: "Maharashtra, India",
@@ -35,7 +35,7 @@ export const getFaqs = (shipping) => [
       },
       {
         q: "Can I change or cancel an order after placing it?",
-        a: "Yes, as long as it has not been dispatched. Email us at " + "support@choicekraft.com" + " or call with your order number and we will amend or cancel it. Once a parcel has left us it has to be handled as a return.",
+        a: "Yes, as long as it has not been dispatched. Email us at " + "choicekraft@gmail.com" + " or call with your order number and we will amend or cancel it. Once a parcel has left us it has to be handled as a return.",
       },
       {
         q: "Do you provide a GST invoice?",

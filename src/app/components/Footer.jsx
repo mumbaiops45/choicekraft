@@ -155,10 +155,10 @@ export default function Footer() {
                   className="mt-0.5 shrink-0 text-primary"
                 />
                 <a
-                  href="mailto:support@choicekraft.com"
+                  href="mailto:choicekraft@gmail.com"
                   className="break-all transition-colors hover:text-primary"
                 >
-                  support@choicekraft.com
+                  choicekraft@gmail.com
                 </a>
               </li>
               <li className="flex gap-3">
