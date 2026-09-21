@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -53,6 +53,7 @@ export default function CheckoutPage() {
   const { isAuthenticated, restoring, getToken, authedCall, openAccount } =
     useAuth();
   const cart = useCart();
+  const { refresh: refreshCart } = cart;
 
   // Two real steps, not just a scroll: address first, payment only once
   // an address is confirmed. Keeps the pay button from ever being visible
@@ -68,6 +69,9 @@ export default function CheckoutPage() {
   const [paying, setPaying] = useState(false);
   const [method, setMethod] = useState("online");
   const [error, setError] = useState("");
+  // Set once payment is verified. The backend has emptied the cart by then, so
+  // re-pricing it would only earn a "Your cart is empty" on the way out.
+  const orderPlaced = useRef(false);
 
   const setField = (key) => (e) =>
     setForm((current) => ({
@@ -115,6 +119,11 @@ export default function CheckoutPage() {
   // ----------------------------------------------------------------
 
   useEffect(() => {
+    // While the cart is syncing (at sign-in the guest basket is moved up one
+    // item at a time) the server only has part of it, or none yet, and pricing
+    // it now reads as "Your cart is empty". This re-runs when `busy` clears.
+    if (orderPlaced.current || cart.busy) return;
+
     if (!selectedId || !isAuthenticated) {
       setPreview(null);
       return;
@@ -133,6 +142,18 @@ export default function CheckoutPage() {
           setPreview(null);
           // "Your cart is empty", "X has only N units available", etc.
           setError(err?.message || "Could not price your order.");
+
+          // The server is the source of truth for the basket. If it says the
+          // cart is empty while this tab still lists items, the tab is stale
+          // (an order went through and its response was lost, another tab
+          // emptied it, ...) — resync rather than leave the two disagreeing.
+          if (
+            cart.count > 0 &&
+            err?.status === 400 &&
+            /cart is empty/i.test(err?.message || "")
+          ) {
+            refreshCart();
+          }
         }
       }
     })();
@@ -140,7 +161,14 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId, isAuthenticated, authedCall, cart.count]);
+  }, [
+    selectedId,
+    isAuthenticated,
+    authedCall,
+    cart.count,
+    cart.busy,
+    refreshCart,
+  ]);
 
   // If the backend says the chosen method is unavailable, fall back to one
   // that is, so PAY NOW can never submit something that will be refused.
@@ -214,6 +242,14 @@ export default function CheckoutPage() {
         createPaymentOrder(t, selectedId)
       );
 
+      // Razorpay's widget cannot start without these two — say so here
+      // rather than open it half-configured.
+      if (!order.keyId || !order.razorpayOrderId) {
+        throw new Error(
+          "The payment gateway did not return its details. Please try again."
+        );
+      }
+
       const ready = await loadRazorpay();
       if (!ready) {
         throw new Error(
@@ -243,6 +279,7 @@ export default function CheckoutPage() {
               })
             );
             // The backend empties the cart as part of verification.
+            orderPlaced.current = true;
             await cart.clear();
             router.push(placed?.id ? `/orders/${placed.id}` : "/orders");
           } catch (err) {
@@ -317,7 +354,9 @@ export default function CheckoutPage() {
     setStep("payment");
   };
 
-  if (restoring || loading) {
+  // `cart.busy` covers the guest basket being merged into the server one right
+  // after sign-in, when the cart briefly reads as empty.
+  if (restoring || loading || cart.busy) {
     return (
       <>
         <PageHeader title="Checkout" crumb="CHECKOUT" />

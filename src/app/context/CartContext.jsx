@@ -254,6 +254,11 @@ export function CartProvider({ children }) {
     return run((token) => cartService.clearCart(token));
   }, [isAuthenticated, run]);
 
+  /** Re-reads the server basket, for when a page finds it out of step. */
+  const refresh = useCallback(async () => {
+    if (isAuthenticated) await loadServerCart();
+  }, [isAuthenticated, loadServerCart]);
+
   const value = useMemo(() => {
     const count = items.reduce((sum, i) => sum + i.qty, 0);
     const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -272,13 +277,25 @@ export function CartProvider({ children }) {
       setQty,
       remove,
       clear,
+      refresh,
       busy,
       error,
       clearError: () => setError(""),
       /** True while the basket is the server one. */
       isServerCart: isAuthenticated,
     };
-  }, [items, open, add, setQty, remove, clear, busy, error, isAuthenticated]);
+  }, [
+    items,
+    open,
+    add,
+    setQty,
+    remove,
+    clear,
+    refresh,
+    busy,
+    error,
+    isAuthenticated,
+  ]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
