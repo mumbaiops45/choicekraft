@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Minus,
   Plus,
+  Check,
 } from "lucide-react";
 import { useWishlist } from "../store/WishlistStore";
 import { useCart } from "../context/CartContext";
@@ -205,31 +206,37 @@ export default function WishlistDrawer({ open, onClose }) {
 
                     <div className="mt-auto flex items-center justify-between pt-3">
                       {inCart ? (
-                        <div className="flex items-center border border-line">
-                          <button
-                            onClick={() => changeQty(product, inCart.qty - 1)}
-                            disabled={inCart.pending}
-                            aria-label={"Decrease quantity of " + product.name}
-                            tabIndex={open ? 0 : -1}
-                            className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface disabled:opacity-50"
-                          >
-                            <Minus size={14} strokeWidth={2.2} />
-                          </button>
-                          <span
-                            aria-live="polite"
-                            className="w-9 text-center text-[14px] font-semibold tabular-nums text-ink"
-                          >
-                            {inCart.qty}
-                          </span>
-                          <button
-                            onClick={() => changeQty(product, inCart.qty + 1)}
-                            disabled={inCart.pending}
-                            aria-label={"Increase quantity of " + product.name}
-                            tabIndex={open ? 0 : -1}
-                            className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface disabled:opacity-50"
-                          >
-                            <Plus size={14} strokeWidth={2.2} />
-                          </button>
+                        <div>
+                          <p className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[1px] text-primary">
+                            <Check size={12} strokeWidth={3} />
+                            In cart
+                          </p>
+                          <div className="flex items-center border border-line">
+                            <button
+                              onClick={() => changeQty(product, inCart.qty - 1)}
+                              disabled={inCart.pending}
+                              aria-label={"Decrease quantity of " + product.name}
+                              tabIndex={open ? 0 : -1}
+                              className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface disabled:opacity-50"
+                            >
+                              <Minus size={14} strokeWidth={2.2} />
+                            </button>
+                            <span
+                              aria-live="polite"
+                              className="w-9 text-center text-[14px] font-semibold tabular-nums text-ink"
+                            >
+                              {inCart.qty}
+                            </span>
+                            <button
+                              onClick={() => changeQty(product, inCart.qty + 1)}
+                              disabled={inCart.pending}
+                              aria-label={"Increase quantity of " + product.name}
+                              tabIndex={open ? 0 : -1}
+                              className="flex h-9 w-9 items-center justify-center text-ink transition-colors hover:bg-surface disabled:opacity-50"
+                            >
+                              <Plus size={14} strokeWidth={2.2} />
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <button
@@ -260,13 +267,33 @@ export default function WishlistDrawer({ open, onClose }) {
             </ul>
 
             <footer className="border-t border-line px-6 py-5">
+              {/* Moving between the two drawers used to mean closing this one
+                  and hunting down the cart button again. Go straight there,
+                  only shown once something actually needs checking. */}
+              {cart.items.length > 0 && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    cart.setOpen(true);
+                  }}
+                  tabIndex={open ? 0 : -1}
+                  className="flex w-full items-center justify-center gap-2 bg-primary py-3.5 text-[12px] font-semibold tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover"
+                >
+                  <ShoppingBag size={15} strokeWidth={2} />
+                  VIEW CART ({cart.productCount})
+                </button>
+              )}
+
               <button
                 onClick={async () => {
                   const result = await wishlist.clear();
                   if (!result.ok) setError(result.message || "Could not clear.");
                 }}
                 tabIndex={open ? 0 : -1}
-                className="w-full border border-line py-3.5 text-[12px] font-semibold tracking-[2px] text-ink-soft transition-colors hover:border-primary hover:text-primary"
+                className={
+                  "w-full border border-line py-3.5 text-[12px] font-semibold tracking-[2px] text-ink-soft transition-colors hover:border-primary hover:text-primary " +
+                  (cart.items.length > 0 ? "mt-3" : "")
+                }
               >
                 CLEAR WISHLIST
               </button>

@@ -18,7 +18,6 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  ShieldAlert,
   MonitorSmartphone,
 } from "lucide-react";
 import { useAuth } from "../store/AuthStore";
@@ -497,15 +496,13 @@ export default function AccountPanel({ open, onClose }) {
                     {user.name}
                   </p>
                   <p className="truncate text-[13px] text-muted">{user.email}</p>
-                  {user.isVerified ? (
+                  {/* Not verified is not shown: nothing here lets someone act
+                      on it (no "verify your email" button exists), so it was
+                      just a dead-end warning on every unverified account. */}
+                  {user.isVerified && (
                     <p className="mt-1 flex items-center gap-1.5 text-[12px] font-medium text-primary">
                       <BadgeCheck size={14} strokeWidth={2} />
                       Verified
-                    </p>
-                  ) : (
-                    <p className="mt-1 flex items-center gap-1.5 text-[12px] font-medium text-muted">
-                      <ShieldAlert size={14} strokeWidth={2} />
-                      Not verified
                     </p>
                   )}
                 </div>
