@@ -11,6 +11,7 @@ import {
 } from "react";
 import * as cartService from "@/lib/services/cartService";
 import { useAuth } from "../store/AuthStore";
+import useRevalidateOnFocus from "../hooks/useRevalidateOnFocus";
 
 /**
  * Cart with two backing stores.
@@ -106,6 +107,12 @@ export function CartProvider({ children }) {
       setError(err?.message || "Could not load your cart.");
     }
   }, [getToken, authedCall]);
+
+  // Coming back to this tab re-reads the server cart, so a change made
+  // elsewhere (another tab, another device, an item going out of stock)
+  // shows up here without a manual reload. Skipped while a mutation of our
+  // own is in flight, so it can't clobber that request's own refresh.
+  useRevalidateOnFocus(loadServerCart, isAuthenticated && !busy);
 
   // Sign in: merge the guest basket up, then read the server cart back.
   useEffect(() => {

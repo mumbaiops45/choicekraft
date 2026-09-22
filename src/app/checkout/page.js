@@ -16,6 +16,7 @@ import {
   Gift,
 } from "lucide-react";
 import PageHeader from "../components/PageHeader";
+import { CheckoutSkeleton } from "../components/skeletons/Skeleton";
 import { useAuth } from "../store/AuthStore";
 import { useCart } from "../context/CartContext";
 import { formatINR } from "@/lib/formatters/currency";
@@ -438,9 +439,10 @@ export default function CheckoutPage() {
     return (
       <>
         <PageHeader title="Checkout" crumb="CHECKOUT" />
-        <p className="mx-auto max-w-[1510px] px-6 py-24 text-center text-muted">
-          Loading…
-        </p>
+        <div role="status">
+          <span className="sr-only">Loading…</span>
+          <CheckoutSkeleton />
+        </div>
       </>
     );
   }

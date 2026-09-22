@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,7 +12,9 @@ import {
   Truck,
 } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
+import { OrderDetailSkeleton } from "../../components/skeletons/Skeleton";
 import { useAuth } from "../../store/AuthStore";
+import useRevalidateOnFocus from "../../hooks/useRevalidateOnFocus";
 import {
   cancelOrder,
   getCancelReasons,
@@ -58,29 +60,51 @@ export default function OrderDetailPage({ params }) {
   const [note, setNote] = useState("");
   const [cancelError, setCancelError] = useState("");
 
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    []
+  );
+
+  /** `quiet` skips the loading skeleton and error banner — for a background
+      refresh that finds nothing wrong with what's already on screen. */
+  const loadOrder = useCallback(
+    async ({ quiet = false } = {}) => {
+      if (!quiet) setLoading(true);
+      try {
+        const found = await authedCall((t) => getMyOrder(t, id));
+        if (!mounted.current) return;
+        setOrder(found);
+        if (!quiet) setError("");
+      } catch (err) {
+        if (mounted.current && !quiet) {
+          setError(err?.message || "Could not load this order.");
+        }
+      } finally {
+        if (mounted.current && !quiet) setLoading(false);
+      }
+    },
+    [authedCall, id]
+  );
+
   useEffect(() => {
     if (restoring) return;
     if (!isAuthenticated) {
       setLoading(false);
       return;
     }
+    loadOrder();
+  }, [restoring, isAuthenticated, loadOrder]);
 
-    let cancelled = false;
-    (async () => {
-      try {
-        const found = await authedCall((t) => getMyOrder(t, id));
-        if (!cancelled) setOrder(found);
-      } catch (err) {
-        if (!cancelled) setError(err?.message || "Could not load this order.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restoring, isAuthenticated, authedCall, id]);
+  // Coming back to this tab re-reads the order, so a status update (shipped,
+  // delivered, ...) shows up without a manual reload. Skipped while a cancel
+  // is in flight, so it can't clobber that request's own refresh.
+  useRevalidateOnFocus(
+    () => loadOrder({ quiet: true }),
+    isAuthenticated && !cancelling
+  );
 
   /** Opens the cancel form and pulls the reasons the backend will accept. */
   const startCancel = async () => {
@@ -147,9 +171,10 @@ export default function OrderDetailPage({ params }) {
     return (
       <>
         <PageHeader title="Order" crumb="ORDER" />
-        <p className="mx-auto max-w-[1510px] px-6 py-24 text-center text-muted">
-          Loading…
-        </p>
+        <div role="status">
+          <span className="sr-only">Loading…</span>
+          <OrderDetailSkeleton />
+        </div>
       </>
     );
   }

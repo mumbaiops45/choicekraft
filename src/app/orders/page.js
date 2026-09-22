@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Package, ChevronRight, Lock } from "lucide-react";
 import PageHeader from "../components/PageHeader";
+import { OrderListSkeleton } from "../components/skeletons/Skeleton";
 import { useAuth } from "../store/AuthStore";
+import useRevalidateOnFocus from "../hooks/useRevalidateOnFocus";
 import { getMyOrders } from "@/lib/services/orderService";
 import { formatINR } from "@/lib/formatters/currency";
 
@@ -29,6 +31,34 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    []
+  );
+
+  /** `quiet` skips the loading skeleton and error banner — for a background
+      refresh that finds nothing wrong with the list already on screen. */
+  const loadOrders = useCallback(
+    async ({ quiet = false } = {}) => {
+      if (!quiet) setLoading(true);
+      try {
+        const list = await authedCall((t) => getMyOrders(t));
+        if (!mounted.current) return;
+        setOrders(list);
+        if (!quiet) setError("");
+      } catch (err) {
+        if (mounted.current && !quiet) {
+          setError(err?.message || "Could not load your orders.");
+        }
+      } finally {
+        if (mounted.current && !quiet) setLoading(false);
+      }
+    },
+    [authedCall]
+  );
 
   useEffect(() => {
     if (restoring) return;
@@ -36,31 +66,21 @@ export default function OrdersPage() {
       setLoading(false);
       return;
     }
+    loadOrders();
+  }, [restoring, isAuthenticated, loadOrders]);
 
-    let cancelled = false;
-    (async () => {
-      try {
-        const list = await authedCall((t) => getMyOrders(t));
-        if (!cancelled) setOrders(list);
-      } catch (err) {
-        if (!cancelled) setError(err?.message || "Could not load your orders.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restoring, isAuthenticated, authedCall]);
+  // Coming back to this tab re-reads the list, so a status that moved on
+  // (or an order placed on another device) shows up without a manual reload.
+  useRevalidateOnFocus(() => loadOrders({ quiet: true }), isAuthenticated);
 
   if (restoring || loading) {
     return (
       <>
         <PageHeader title="My Orders" crumb="ORDERS" />
-        <p className="mx-auto max-w-[1510px] px-6 py-24 text-center text-muted">
-          Loading…
-        </p>
+        <div role="status">
+          <span className="sr-only">Loading…</span>
+          <OrderListSkeleton />
+        </div>
       </>
     );
   }

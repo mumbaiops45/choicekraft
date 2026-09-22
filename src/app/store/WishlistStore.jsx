@@ -10,6 +10,7 @@ import {
 } from "react";
 import * as wishlistService from "@/lib/services/wishlistService";
 import { useAuth } from "./AuthStore";
+import useRevalidateOnFocus from "../hooks/useRevalidateOnFocus";
 
 /**
  * Wishlist store.
@@ -30,26 +31,37 @@ export function WishlistProvider({ children }) {
   // Product ids mid-request, so a card can show its own pending state.
   const [pending, setPending] = useState([]);
 
-  const load = useCallback(async () => {
-    const token = getToken();
-    if (!token) {
-      setProducts([]);
-      return;
-    }
+  /**
+   * @param {{ quiet?: boolean }} [options] `quiet` skips the "Loading your
+   *        wishlist…" state and any error banner — for a background refresh
+   *        that finds nothing wrong with what's already on screen.
+   */
+  const load = useCallback(
+    async ({ quiet = false } = {}) => {
+      const token = getToken();
+      if (!token) {
+        setProducts([]);
+        return;
+      }
 
-    setLoading(true);
-    setError("");
-    try {
-      const { products: found } = await authedCall((t) =>
-        wishlistService.getWishlist(t)
-      );
-      setProducts(found);
-    } catch (err) {
-      setError(err?.message || "Could not load your wishlist.");
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken, authedCall]);
+      if (!quiet) {
+        setLoading(true);
+        setError("");
+      }
+      try {
+        const { products: found } = await authedCall((t) =>
+          wishlistService.getWishlist(t)
+        );
+        setProducts(found);
+        if (!quiet) setError("");
+      } catch (err) {
+        if (!quiet) setError(err?.message || "Could not load your wishlist.");
+      } finally {
+        if (!quiet) setLoading(false);
+      }
+    },
+    [getToken, authedCall]
+  );
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -59,6 +71,10 @@ export function WishlistProvider({ children }) {
       setError("");
     }
   }, [isAuthenticated, load]);
+
+  // Coming back to this tab re-reads the wishlist, so a save made on another
+  // device shows up here without a manual reload.
+  useRevalidateOnFocus(() => load({ quiet: true }), isAuthenticated);
 
   const ids = useMemo(
     () => new Set(products.map((product) => product.id)),
