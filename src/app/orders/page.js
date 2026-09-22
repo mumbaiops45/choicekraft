@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Package, ChevronRight, Lock } from "lucide-react";
 import PageHeader from "../components/PageHeader";
-import { OrderListSkeleton } from "../components/skeletons/Skeleton";
+import { OrderListSkeleton, SlowLoadHint } from "../components/skeletons/Skeleton";
 import { useAuth } from "../store/AuthStore";
 import useRevalidateOnFocus from "../hooks/useRevalidateOnFocus";
+import useSlowLoadHint from "../hooks/useSlowLoadHint";
 import { getMyOrders } from "@/lib/services/orderService";
 import { formatINR } from "@/lib/formatters/currency";
 
@@ -73,6 +74,8 @@ export default function OrdersPage() {
   // (or an order placed on another device) shows up without a manual reload.
   useRevalidateOnFocus(() => loadOrders({ quiet: true }), isAuthenticated);
 
+  const slowLoad = useSlowLoadHint(restoring || loading);
+
   if (restoring || loading) {
     return (
       <>
@@ -81,6 +84,7 @@ export default function OrdersPage() {
           <span className="sr-only">Loading…</span>
           <OrderListSkeleton />
         </div>
+        <SlowLoadHint show={slowLoad} />
       </>
     );
   }

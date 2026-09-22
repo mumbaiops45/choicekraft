@@ -16,9 +16,11 @@ import {
   Gift,
 } from "lucide-react";
 import PageHeader from "../components/PageHeader";
-import { CheckoutSkeleton } from "../components/skeletons/Skeleton";
+import { CheckoutSkeleton, SlowLoadHint } from "../components/skeletons/Skeleton";
 import { useAuth } from "../store/AuthStore";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../store/WishlistStore";
+import useSlowLoadHint from "../hooks/useSlowLoadHint";
 import { formatINR } from "@/lib/formatters/currency";
 import * as addressService from "@/lib/services/addressService";
 import { previewCheckout } from "@/lib/services/checkoutService";
@@ -74,6 +76,7 @@ export default function CheckoutPage() {
     useAuth();
   const cart = useCart();
   const { refresh: refreshCart } = cart;
+  const wishlist = useWishlist();
 
   // Two real steps, not just a scroll: address first, payment only once
   // an address is confirmed. Keeps the pay button from ever being visible
@@ -310,6 +313,11 @@ export default function CheckoutPage() {
     setPaying(true);
     setError("");
 
+    // Captured now, not read from `cart` again inside the handler below —
+    // by the time Razorpay's widget calls back, the cart has already been
+    // emptied, so this is the only place that still knows what was bought.
+    const orderedProductIds = cart.items.map((item) => item.id);
+
     try {
       const order = await authedCall((t) =>
         createPaymentOrder(t, selectedId)
@@ -358,6 +366,19 @@ export default function CheckoutPage() {
             // The backend empties the cart as part of verification.
             orderPlaced.current = true;
             await cart.clear();
+
+            // Buying something is a stronger signal than wishing for it —
+            // an order for it going through drops it from "things I might
+            // want" too, the same way adding it to the cart used to.
+            // wishlist.remove() reports its own failures rather than
+            // throwing, so one going wrong can't derail the order that has
+            // already succeeded, or the redirect to its confirmation page.
+            await Promise.all(
+              orderedProductIds
+                .filter((id) => wishlist.has(id))
+                .map((id) => wishlist.remove(id))
+            );
+
             router.push(placed?.id ? `/orders/${placed.id}` : "/orders");
           } catch (err) {
             setError(
@@ -427,6 +448,8 @@ export default function CheckoutPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
+  const slowLoad = useSlowLoadHint(restoring || loading || cart.busy);
+
   const goToPayment = () => {
     if (!selectedId || !preview) return;
     setError("");
@@ -443,6 +466,7 @@ export default function CheckoutPage() {
           <span className="sr-only">Loading…</span>
           <CheckoutSkeleton />
         </div>
+        <SlowLoadHint show={slowLoad} />
       </>
     );
   }
@@ -530,7 +554,25 @@ export default function CheckoutPage() {
               strokeWidth={2}
               className="mt-0.5 shrink-0 text-primary"
             />
-            <p className="text-[13px] leading-6 text-ink-soft">{error}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] leading-6 text-ink-soft">{error}</p>
+              {/* This page shows no cart items of its own, so an error that
+                  stopped the order from pricing at all (a variant that needs
+                  picking, something now out of stock, ...) is otherwise a
+                  dead end — nothing here to act on. Send them to the one
+                  place that can actually be fixed. Address/payment errors
+                  don't hit this: preview stays set once it has loaded, so
+                  this only shows while there is truly nothing priced. */}
+              {!preview && (
+                <button
+                  type="button"
+                  onClick={() => cart.setOpen(true)}
+                  className="mt-2 text-[12px] font-semibold text-primary hover:underline"
+                >
+                  Open cart to fix it
+                </button>
+              )}
+            </div>
           </div>
         )}
 

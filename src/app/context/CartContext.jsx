@@ -32,9 +32,19 @@ import useRevalidateOnFocus from "../hooks/useRevalidateOnFocus";
 const CartContext = createContext(null);
 const STORAGE_KEY = "ck-cart-v1";
 
+/**
+ * What tells two lines apart in the cart. Almost always just the slug — one
+ * product, one line. A product with variants ("144 Pages" vs "176 Pages") can
+ * have several lines at once, so its variant id joins the key. Plain string,
+ * not an object, so it works as-is wherever a slug used to: as a `key` prop,
+ * and as the argument to setQty/remove.
+ */
+const keyFor = (slug, variantId) => (variantId ? `${slug}::${variantId}` : slug);
+
 /** Server cart item -> the flat shape the drawer renders. */
 const fromServer = (item) => ({
   itemId: item.id,
+  key: keyFor(item.product.slug, item.variant?.id),
   id: item.product.id,
   slug: item.product.slug,
   name: item.product.name,
@@ -44,19 +54,28 @@ const fromServer = (item) => ({
   image: item.product.image,
   kind: item.product.kind || "stationery",
   qty: item.quantity,
+  variantId: item.variant?.id || null,
+  variantName: item.variant?.name || null,
 });
 
-/** Product -> a guest cart line. */
-const toLocal = (product, qty) => ({
+/**
+ * Product (+ its chosen variant, if any) -> a guest cart line. `variant` is
+ * one entry from the product's own `variants` list — its price and name
+ * override the base product's, the way the server does for a signed-in cart.
+ */
+const toLocal = (product, qty, variant = null) => ({
   id: product.id || "",
+  key: keyFor(product.slug, variant?.id),
   slug: product.slug,
   name: product.name,
   type: product.type || "",
-  price: product.price,
-  mrp: product.mrp ?? null,
+  price: variant?.price ?? product.price,
+  mrp: variant ? variant.mrp : (product.mrp ?? null),
   image: product.image,
   kind: product.kind || "stationery",
   qty,
+  variantId: variant?.id || null,
+  variantName: variant?.name || null,
 });
 
 export function CartProvider({ children }) {
@@ -133,6 +152,7 @@ export function CartProvider({ children }) {
           await authedCall((t) =>
             cartService.addToCart(t, {
               productId: item.id,
+              ...(item.variantId ? { variantId: item.variantId } : {}),
               quantity: item.qty,
             })
           );
@@ -165,7 +185,7 @@ export function CartProvider({ children }) {
   const items = isAuthenticated ? serverItems : localItems;
 
   const findItem = useCallback(
-    (slug) => items.find((item) => item.slug === slug),
+    (key) => items.find((item) => item.key === key),
     [items]
   );
 
@@ -207,13 +227,17 @@ export function CartProvider({ children }) {
   );
 
   const add = useCallback(
-    async (product, qty = 1, { openCart = true } = {}) => {
-      // A product goes into the cart once, and how many of it is changed with
-      // the - / + stepper. Letting every tap on "Add to cart" quietly bump the
-      // quantity meant the same product got added again and again. Say so
-      // instead — in the cart drawer, next to the line and its stepper.
-      if (items.some((item) => item.slug === product.slug)) {
-        const message = `${product.name} is already in your cart. Change the quantity below.`;
+    async (product, qty = 1, { openCart = true, variant = null } = {}) => {
+      const key = keyFor(product.slug, variant?.id);
+
+      // A product (or, for one with variants, a specific option of it) goes
+      // into the cart once, and how many is changed with the - / + stepper.
+      // Letting every tap on "Add to cart" quietly bump the quantity meant
+      // the same line got added again and again. Say so instead — in the
+      // cart drawer, next to the line and its stepper.
+      if (items.some((item) => item.key === key)) {
+        const label = variant ? `${product.name} — ${variant.name}` : product.name;
+        const message = `${label} is already in your cart. Change the quantity below.`;
         setError(message);
         if (openCart) setOpen(true);
         return { ok: false, alreadyInCart: true, message };
@@ -229,13 +253,13 @@ export function CartProvider({ children }) {
 
       if (!isAuthenticated) {
         setLocalItems((current) => {
-          const found = current.find((i) => i.slug === product.slug);
+          const found = current.find((i) => i.key === key);
           if (found) {
             return current.map((i) =>
-              i.slug === product.slug ? { ...i, qty: i.qty + qty } : i
+              i.key === key ? { ...i, qty: i.qty + qty } : i
             );
           }
-          return [...current, toLocal(product, qty)];
+          return [...current, toLocal(product, qty, variant)];
         });
         return { ok: true };
       }
@@ -245,20 +269,24 @@ export function CartProvider({ children }) {
       // drawer would sit on "Your cart is empty". The re-read that follows
       // swaps this for the server's copy, with the real item id.
       setServerItems((current) => {
-        const found = current.find((i) => i.slug === product.slug);
+        const found = current.find((i) => i.key === key);
         if (found) {
           return current.map((i) =>
-            i.slug === product.slug ? { ...i, qty: i.qty + qty } : i
+            i.key === key ? { ...i, qty: i.qty + qty } : i
           );
         }
         return [
           ...current,
-          { ...toLocal(product, qty), itemId: "", pending: true },
+          { ...toLocal(product, qty, variant), itemId: "", pending: true },
         ];
       });
 
       const result = await run((token) =>
-        cartService.addToCart(token, { productId: product.id, quantity: qty })
+        cartService.addToCart(token, {
+          productId: product.id,
+          ...(variant?.id ? { variantId: variant.id } : {}),
+          quantity: qty,
+        })
       );
 
       // The server refused it (out of stock, ...): re-read so the line shown
@@ -271,17 +299,17 @@ export function CartProvider({ children }) {
   );
 
   const setQty = useCallback(
-    async (slug, qty) => {
+    async (key, qty) => {
       if (!isAuthenticated) {
         setLocalItems((current) =>
           qty <= 0
-            ? current.filter((i) => i.slug !== slug)
-            : current.map((i) => (i.slug === slug ? { ...i, qty } : i))
+            ? current.filter((i) => i.key !== key)
+            : current.map((i) => (i.key === key ? { ...i, qty } : i))
         );
         return { ok: true };
       }
 
-      const item = findItem(slug);
+      const item = findItem(key);
       // A line just added is on screen before the server has given it an id.
       if (!item?.itemId) return { ok: false };
 
@@ -289,8 +317,8 @@ export function CartProvider({ children }) {
       // answers a tap straight away instead of after two round trips.
       setServerItems((current) =>
         qty <= 0
-          ? current.filter((i) => i.slug !== slug)
-          : current.map((i) => (i.slug === slug ? { ...i, qty } : i))
+          ? current.filter((i) => i.key !== key)
+          : current.map((i) => (i.key === key ? { ...i, qty } : i))
       );
 
       // The backend has no "quantity 0" — that is a removal.
@@ -309,7 +337,7 @@ export function CartProvider({ children }) {
   );
 
   // Removing a line is setting its quantity to nothing.
-  const remove = useCallback((slug) => setQty(slug, 0), [setQty]);
+  const remove = useCallback((key) => setQty(key, 0), [setQty]);
 
   const clear = useCallback(async () => {
     if (!isAuthenticated) {

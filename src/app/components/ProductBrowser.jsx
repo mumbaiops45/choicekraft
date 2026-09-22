@@ -351,13 +351,22 @@ export default function ProductBrowser({ products, activeCategory }) {
                         )}
                       </div>
 
-                      <button
-                        onClick={() => add(product)}
-                        className="mt-5 w-full bg-secondary py-3 text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors hover:bg-primary sm:w-[190px]">
-                        {inCartSlugs.has(product.slug)
-                          ? "ADDED TO CART"
-                          : "ADD TO CART"}
-                      </button>
+                      {product.hasVariants ? (
+                        <Link
+                          href={`/products/${product.slug}`}
+                          className="mt-5 block w-full bg-secondary py-3 text-center text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors hover:bg-primary sm:w-[190px]"
+                        >
+                          SELECT OPTIONS
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => add(product)}
+                          className="mt-5 w-full bg-secondary py-3 text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors hover:bg-primary sm:w-[190px]">
+                          {inCartSlugs.has(product.slug)
+                            ? "ADDED TO CART"
+                            : "ADD TO CART"}
+                        </button>
+                      )}
                     </div>
                   </article>
                 </Reveal>

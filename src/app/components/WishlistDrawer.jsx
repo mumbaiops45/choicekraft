@@ -205,7 +205,20 @@ export default function WishlistDrawer({ open, onClose }) {
                     </p>
 
                     <div className="mt-auto flex items-center justify-between pt-3">
-                      {inCart ? (
+                      {product.hasVariants ? (
+                        // Which option (page count, size, ...) isn't chosen
+                        // here, so this can't be a one-click add — send them
+                        // to the product page to pick one.
+                        <Link
+                          href={productHref}
+                          onClick={onClose}
+                          tabIndex={open ? 0 : -1}
+                          className="flex items-center gap-2 bg-secondary px-4 py-2.5 text-[11px] font-semibold tracking-[1.5px] text-secondary-foreground transition-colors hover:bg-primary"
+                        >
+                          <ShoppingBag size={14} strokeWidth={2} />
+                          VIEW OPTIONS
+                        </Link>
+                      ) : inCart ? (
                         <div>
                           <p className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[1px] text-primary">
                             <Check size={12} strokeWidth={3} />

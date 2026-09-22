@@ -10,6 +10,7 @@
 import { api } from "@/lib/api/client";
 import { ENDPOINTS } from "@/lib/api/endpoints";
 import { formatProduct } from "@/lib/formatters/product";
+import { formatVariant } from "@/lib/formatters/variant";
 
 const authed = (token, options = {}) => ({
   cache: "no-store",
@@ -31,7 +32,12 @@ const formatCart = (raw) => {
         return {
           id: item._id || item.id,
           product,
-          variant: item.variant || null,
+          // The line's own price already reflects whichever variant was
+          // picked (or the base product, when there wasn't one) — the
+          // backend computed it that way, so nothing here needs to know
+          // which one it was to total correctly. The variant is still
+          // formatted and passed through, for its name and id.
+          variant: formatVariant(item.variant),
           quantity: Number(item.quantity) || 0,
           price: Number(item.price) || 0,
           itemTotal: Number(item.itemTotal) || 0,

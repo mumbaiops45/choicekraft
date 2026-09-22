@@ -19,8 +19,19 @@ import { formatINR } from "@/lib/formatters/currency";
 import useScrollLock from "../hooks/useScrollLock";
 
 export default function CartDrawer() {
-  const { items, productCount, subtotal, saved, open, setOpen, setQty, remove, error, clearError } =
-    useCart();
+  const {
+    items,
+    productCount,
+    subtotal,
+    saved,
+    open,
+    setOpen,
+    setQty,
+    remove,
+    clear,
+    error,
+    clearError,
+  } = useCart();
   const { isAuthenticated, restoring, openAccount, closeAccount } = useAuth();
   const { amountToFreeShipping, giftEligibleFor, amountToFreeGift, freeGiftProduct } =
     useSettingsStore();
@@ -149,7 +160,7 @@ export default function CartDrawer() {
           <>
             <ul className="flex-1 divide-y divide-line overflow-y-auto px-6">
               {items.map((item) => (
-                <li key={item.slug} className="flex gap-4 py-5">
+                <li key={item.key} className="flex gap-4 py-5">
                   <div className="h-[92px] w-[74px] shrink-0 overflow-hidden bg-surface">
                     <img
                       src={item.image}
@@ -172,6 +183,11 @@ export default function CartDrawer() {
                     <p className="mt-0.5 text-[14px] font-semibold leading-5 text-ink">
                       {item.name}
                     </p>
+                    {item.variantName && (
+                      <p className="mt-0.5 text-[12px] text-muted">
+                        {item.variantName}
+                      </p>
+                    )}
                     <p className="mt-1 text-[14px] font-bold text-primary">
                       {formatINR(item.price)}
                     </p>
@@ -179,7 +195,7 @@ export default function CartDrawer() {
                     <div className="mt-auto flex items-center justify-between pt-3">
                       <div className="flex items-center border border-line">
                         <button
-                          onClick={() => setQty(item.slug, item.qty - 1)}
+                          onClick={() => setQty(item.key, item.qty - 1)}
                           disabled={item.pending}
                           aria-label={"Decrease quantity of " + item.name}
                           tabIndex={open ? 0 : -1}
@@ -191,7 +207,7 @@ export default function CartDrawer() {
                           {item.qty}
                         </span>
                         <button
-                          onClick={() => setQty(item.slug, item.qty + 1)}
+                          onClick={() => setQty(item.key, item.qty + 1)}
                           disabled={item.pending}
                           aria-label={"Increase quantity of " + item.name}
                           tabIndex={open ? 0 : -1}
@@ -202,7 +218,7 @@ export default function CartDrawer() {
                       </div>
 
                       <button
-                        onClick={() => remove(item.slug)}
+                        onClick={() => remove(item.key)}
                         disabled={item.pending}
                         aria-label={"Remove " + item.name}
                         tabIndex={open ? 0 : -1}
@@ -280,6 +296,20 @@ export default function CartDrawer() {
               >
                 CONTINUE SHOPPING
               </Link>
+
+              <button
+                onClick={async () => {
+                  const result = await clear();
+                  if (!result.ok) return;
+                  // Confirms it actually worked — otherwise an empty drawer
+                  // after a click that silently failed reads as "did nothing".
+                  clearError();
+                }}
+                tabIndex={open ? 0 : -1}
+                className="mt-3 w-full border border-line py-3.5 text-[12px] font-semibold tracking-[2px] text-ink-soft transition-colors hover:border-primary hover:text-primary"
+              >
+                CLEAR CART
+              </button>
             </footer>
           </>
         )}

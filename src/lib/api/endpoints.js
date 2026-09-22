@@ -37,6 +37,10 @@ export const ENDPOINTS = {
     list: "/products",
     bySlug: (slug) => `/products/slug/${encodeURIComponent(slug)}`,
     byId: (id) => `/products/${encodeURIComponent(id)}`,
+    // Public — variant.routes.js, mounted directly under /api (not
+    // /products), but the path still reads as a product sub-resource.
+    variants: (productId) =>
+      `/products/${encodeURIComponent(productId)}/variants`,
 
     // Admin (protect + adminOnly)
     adminList: "/products/admin/all",

@@ -103,15 +103,27 @@ export default function ProductCard({ product }) {
           {/* mt-auto pins every button to the bottom, so buttons line up across
               a row no matter how long the names above them are. */}
           <div className="mt-auto pt-5">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                add(product);
-              }}
-              className="w-full bg-secondary py-3 text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors hover:bg-primary">
-              {inCart ? "ADDED TO CART" : "ADD TO CART"}
-            </button>
+            {product.hasVariants ? (
+              // Which option to add isn't known from the card, so this is
+              // not its own button — it rides the card's own link to the
+              // product page, where a variant can actually be picked.
+              <span
+                aria-hidden="true"
+                className="block w-full bg-secondary py-3 text-center text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors group-hover:bg-primary"
+              >
+                SELECT OPTIONS
+              </span>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  add(product);
+                }}
+                className="w-full bg-secondary py-3 text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors hover:bg-primary">
+                {inCart ? "ADDED TO CART" : "ADD TO CART"}
+              </button>
+            )}
           </div>
         </div>
       </Link>

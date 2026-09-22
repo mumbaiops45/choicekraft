@@ -136,6 +136,26 @@ export function TextPageSkeleton({ withSidebar = true }) {
   );
 }
 
+/**
+ * A note that appears under a skeleton once its load has run long — paired
+ * with useSlowLoadHint so a slow backend (Render's free tier waking back up,
+ * in particular) reads as "still working" instead of looking frozen. `show`
+ * is that hook's return value; this component renders nothing until it's
+ * true, so a normal, fast load never shows any of this.
+ */
+export function SlowLoadHint({ show }) {
+  if (!show) return null;
+  return (
+    <p
+      role="status"
+      className="mx-auto max-w-[1510px] px-6 pb-8 text-center text-[12px] leading-6 text-muted"
+    >
+      This is taking longer than usual — please hold on, we&rsquo;re still
+      working on it.
+    </p>
+  );
+}
+
 /** A handful of order rows, matching /orders' card list. */
 export function OrderListSkeleton({ count = 4 }) {
   return (

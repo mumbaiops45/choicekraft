@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { formatINR } from "@/lib/formatters/currency";
+import { sharedAttributeLabel } from "@/lib/formatters/variant";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../store/AuthStore";
 import { useWishlist } from "../store/WishlistStore";
@@ -24,6 +25,13 @@ import Reveal from "./Reveal";
  * /checkout instead of leaving them to find the cart drawer themselves.
  * Whatever else is already in the cart goes along with it, same as any
  * other e-commerce "buy now" that isn't a fully isolated express lane.
+ *
+ * A product with variants ("144 Pages" vs "176 Pages", ...) has no price,
+ * stock or "in cart" state of its own — those all belong to whichever
+ * variant is picked below. The parent page passes `key={product.id}` so
+ * navigating from one product to another (client-side, no full reload)
+ * starts this over rather than carrying the last product's picked variant
+ * and quantity across.
  */
 export default function ProductDetail({ product }) {
   const router = useRouter();
@@ -32,33 +40,72 @@ export default function ProductDetail({ product }) {
   const wishlist = useWishlist();
   const { freeShippingThreshold } = useSettingsStore();
 
+  const variants = product.variants || [];
+  const variantLabel = sharedAttributeLabel(variants);
+
+  // Nothing picked yet: the price shown below is a range across every
+  // option, the way it would sit on a shelf with several prices tagged on
+  // one box. Choosing an option is what turns that into a single price.
+  const [selectedVariantId, setSelectedVariantId] = useState(null);
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const [buying, setBuying] = useState(false);
 
   const saved = wishlist.has(product.id);
-  const inCart = items.some((item) => item.slug === product.slug);
-  const off = product.mrp
-    ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+
+  const hasVariants = product.hasVariants;
+  const selectedVariant = hasVariants
+    ? variants.find((v) => v.id === selectedVariantId) || null
+    : null;
+  // A variant product with no active variants yet (admin turned the switch on
+  // before adding any option) has nothing sellable — treat it as unavailable
+  // rather than let a variant-less add reach the backend and fail there.
+  const variantsMissing = hasVariants && variants.length === 0;
+  // Waiting on a choice: priced, but not yet down to one price.
+  const needsSelection = hasVariants && !variantsMissing && !selectedVariant;
+
+  const prices = variants.map((v) => v.price);
+  const priceRange =
+    prices.length > 0
+      ? { min: Math.min(...prices), max: Math.max(...prices) }
+      : null;
+
+  // Price, stock and "in cart" all come from the picked variant once one is
+  // chosen; otherwise from the product itself, exactly as before a product
+  // could have variants at all.
+  const activePrice = hasVariants ? (selectedVariant?.price ?? 0) : product.price;
+  const activeMrp = hasVariants ? (selectedVariant?.mrp ?? null) : product.mrp;
+  const activeStock = hasVariants ? (selectedVariant?.stock ?? 0) : product.stock;
+  const activeInStock = hasVariants
+    ? Boolean(selectedVariant?.inStock)
+    : product.inStock;
+
+  const inCart = items.some(
+    (item) =>
+      item.slug === product.slug &&
+      (item.variantId || null) === (selectedVariant?.id || null)
+  );
+  const off = activeMrp
+    ? Math.round(((activeMrp - activePrice) / activeMrp) * 100)
     : 0;
   const isBook = product.kind === "book";
   const busy = adding || buying;
 
-  const clampQty = (n) => Math.max(1, Math.min(product.stock || 1, n));
+  const clampQty = (n) => Math.max(1, Math.min(activeStock || 1, n));
 
   const handleAddToCart = async () => {
     if (busy) return;
     setAdding(true);
-    await add(product, qty);
+    await add(product, qty, { variant: selectedVariant });
     setAdding(false);
   };
 
   const handleBuyNow = async () => {
-    if (busy || !product.inStock) return;
+    if (busy || !activeInStock) return;
     setBuying(true);
     // Already in the cart (from an earlier tap): the cart is refusing a second
     // add, and there is nothing to add anyway — just go and pay for it.
-    if (!inCart) await add(product, qty);
+    if (!inCart) await add(product, qty, { variant: selectedVariant });
     router.push("/checkout");
   };
 
@@ -97,21 +144,89 @@ export default function ProductDetail({ product }) {
             {product.name}
           </h1>
 
-          <div className="mt-5 flex items-baseline gap-3">
-            <span className="text-3xl font-bold text-primary">
-              {formatINR(product.price)}
-            </span>
-            {product.mrp > product.price && (
-              <>
-                <span className="text-lg text-muted line-through">
-                  {formatINR(product.mrp)}
-                </span>
-                <span className="text-[13px] font-semibold text-success">
-                  {off}% off
-                </span>
-              </>
-            )}
-          </div>
+          {!variantsMissing && (
+            <div className="mt-5 flex items-baseline gap-3">
+              {needsSelection && priceRange ? (
+                priceRange.min === priceRange.max ? (
+                  <span className="text-3xl font-bold text-primary">
+                    {formatINR(priceRange.min)}
+                  </span>
+                ) : (
+                  <span className="text-3xl font-bold text-primary">
+                    {formatINR(priceRange.min)}
+                    <span className="text-lg font-semibold text-muted">
+                      {" "}
+                      – {formatINR(priceRange.max)}
+                    </span>
+                  </span>
+                )
+              ) : (
+                <>
+                  <span className="text-3xl font-bold text-primary">
+                    {formatINR(activePrice)}
+                  </span>
+                  {activeMrp > activePrice && (
+                    <>
+                      <span className="text-lg text-muted line-through">
+                        {formatINR(activeMrp)}
+                      </span>
+                      <span className="text-[13px] font-semibold text-success">
+                        {off}% off
+                      </span>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {variantsMissing ? (
+            <p className="mt-5 text-[13px] font-semibold text-danger">
+              This product is not available right now.
+            </p>
+          ) : (
+            hasVariants && (
+              <div className="mt-6">
+                {variantLabel && (
+                  <p className="text-[12px] font-semibold uppercase tracking-[1px] text-ink-soft">
+                    {variantLabel}
+                  </p>
+                )}
+                <div className="mt-2.5 flex flex-wrap gap-2.5">
+                  {variants.map((variant) => {
+                    const active = variant.id === selectedVariantId;
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedVariantId(variant.id);
+                          // A quantity picked for one option may not fit the
+                          // next — "5" against an 8-in-stock option leaves
+                          // 3, then switching to one with only 2 left should
+                          // not silently carry that 5 across.
+                          setQty(1);
+                        }}
+                        disabled={!variant.inStock}
+                        aria-pressed={active}
+                        title={variant.inStock ? undefined : "Out of stock"}
+                        className={
+                          "border px-4 py-2.5 text-[13px] font-semibold transition-colors " +
+                          (!variant.inStock
+                            ? "cursor-not-allowed border-line text-muted opacity-50 line-through"
+                            : active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-line text-ink hover:border-primary")
+                        }
+                      >
+                        {variant.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )
+          )}
 
           {product.description && (
             <p className="mt-5 max-w-[520px] leading-7 text-ink-soft">
@@ -120,17 +235,23 @@ export default function ProductDetail({ product }) {
           )}
 
           <p className="mt-4 text-[13px] font-semibold">
-            {product.inStock ? (
+            {variantsMissing || needsSelection ? null : activeInStock ? (
               <span className="text-success">
                 In stock
-                {product.stock <= 5 ? ` — only ${product.stock} left` : ""}
+                {activeStock <= 5 ? ` — only ${activeStock} left` : ""}
               </span>
             ) : (
               <span className="text-danger">Out of stock</span>
             )}
           </p>
 
-          {product.inStock && (
+          {needsSelection && (
+            <p className="mt-4 text-[13px] leading-6 text-muted">
+              Select {variantLabel ? "a " + variantLabel.toLowerCase() : "an option"} above to see stock and add it to your cart.
+            </p>
+          )}
+
+          {!needsSelection && activeInStock && (
             <div className="mt-6 flex items-center gap-3">
               <span className="text-[12px] font-semibold uppercase tracking-[1px] text-ink-soft">
                 Qty
@@ -149,7 +270,7 @@ export default function ProductDetail({ product }) {
                 </span>
                 <button
                   onClick={() => setQty((q) => clampQty(q + 1))}
-                  disabled={qty >= product.stock}
+                  disabled={qty >= activeStock}
                   aria-label="Increase quantity"
                   className="flex h-11 w-11 items-center justify-center text-ink transition-colors hover:text-primary disabled:opacity-30"
                 >
@@ -162,7 +283,7 @@ export default function ProductDetail({ product }) {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
               onClick={handleAddToCart}
-              disabled={!product.inStock || busy}
+              disabled={!activeInStock || busy || variantsMissing || needsSelection}
               className="flex flex-1 items-center justify-center gap-2 border-2 border-secondary py-4 text-[12px] font-semibold uppercase tracking-[2px] text-ink transition-colors hover:bg-secondary hover:text-secondary-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ShoppingBag size={16} strokeWidth={2} />
@@ -170,7 +291,7 @@ export default function ProductDetail({ product }) {
             </button>
             <button
               onClick={handleBuyNow}
-              disabled={!product.inStock || busy}
+              disabled={!activeInStock || busy || variantsMissing || needsSelection}
               className="flex flex-1 items-center justify-center gap-2 bg-primary py-4 text-[12px] font-semibold uppercase tracking-[2px] text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Zap size={16} strokeWidth={2} fill="currentColor" />

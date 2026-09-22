@@ -14,6 +14,7 @@ import {
   formatProducts,
   formatProductPagination,
 } from "@/lib/formatters/product";
+import { formatVariants } from "@/lib/formatters/variant";
 
 export const PRODUCT_CACHE_TAG = "products";
 
@@ -162,6 +163,42 @@ export async function getProductBySlugOrId(value, options = {}) {
   return OBJECT_ID_RE.test(value) ? getProductById(value, options) : null;
 }
 
+/**
+ * A product's priced, stocked options ("144 Pages", "176 Pages", ...),
+ * ordered for display. Empty for a product with no variants, or if the
+ * lookup fails — a product page should still render without its price if
+ * this one extra call has trouble.
+ */
+export async function getProductVariants(productId, options = {}) {
+  if (!productId) return [];
+
+  try {
+    const response = await api.get(
+      ENDPOINTS.products.variants(productId),
+      cached(options)
+    );
+    return formatVariants(response?.data?.variants);
+  } catch (error) {
+    console.error("[productService] getProductVariants failed:", error.message);
+    return [];
+  }
+}
+
+/**
+ * `getProductBySlugOrId`, plus its variants when it has any — one extra call,
+ * made only when the product actually needs it. This is what the product
+ * detail page should call; `getProductBySlugOrId` alone still serves callers
+ * (banner links, etc.) that only need the product itself.
+ */
+export async function getProductWithVariants(value, options = {}) {
+  const product = await getProductBySlugOrId(value, options);
+  if (!product) return null;
+  if (!product.hasVariants) return { ...product, variants: [] };
+
+  const variants = await getProductVariants(product.id, options);
+  return { ...product, variants };
+}
+
 // ======================================================
 // ADMIN — every call needs a bearer token
 // ======================================================
@@ -251,6 +288,8 @@ export const productService = {
   getProductBySlug,
   getProductById,
   getProductBySlugOrId,
+  getProductVariants,
+  getProductWithVariants,
   getAdminProducts,
   createProduct,
   updateProduct,

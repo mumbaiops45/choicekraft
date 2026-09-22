@@ -14,8 +14,16 @@ export const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || DEFAULT_BASE_URL
 ).replace(/\/+$/, "");
 
-/** Abort a request that the backend has not answered within this many ms. */
-export const API_TIMEOUT = Number(process.env.NEXT_PUBLIC_API_TIMEOUT) || 15000;
+/**
+ * Abort a request that the backend has not answered within this many ms.
+ *
+ * 30s, not the more typical 10-15s: Render's free tier spins the backend down
+ * after it sits idle, and waking it back up for the next request can itself
+ * take most of that time. A shorter timeout was aborting cold-start requests
+ * that would have gone through fine a few seconds later, particularly the
+ * first page load after the server had been idle for a while.
+ */
+export const API_TIMEOUT = Number(process.env.NEXT_PUBLIC_API_TIMEOUT) || 30000;
 
 /**
  * How long a cached server-side GET stays fresh, in seconds.

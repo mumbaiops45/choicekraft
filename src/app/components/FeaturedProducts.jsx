@@ -114,12 +114,25 @@ export default function FeaturedProducts({ products = [] }) {
 
                     {/* Quick actions slide up on hover */}
                     <div className="absolute inset-x-0 bottom-0 flex translate-y-full gap-2 bg-white/95 p-3 backdrop-blur-sm transition-transform duration-500 ease-out group-hover:translate-y-0">
-                      <button
-                        onClick={() => add(product)}
-                        className="flex flex-1 items-center justify-center gap-2 bg-secondary py-2.5 text-[11px] font-semibold tracking-[1.5px] text-secondary-foreground transition-colors hover:bg-primary">
-                        <ShoppingBag size={14} strokeWidth={2} />
-                        {inCartSlugs.has(product.slug) ? "ADDED" : "ADD"}
-                      </button>
+                      {product.hasVariants ? (
+                        // Which option to add isn't known from the card —
+                        // send them to the product page to pick one, same
+                        // destination the view icon beside this already goes.
+                        <Link
+                          href={`/products/${product.slug}`}
+                          className="flex flex-1 items-center justify-center gap-2 bg-secondary py-2.5 text-[11px] font-semibold tracking-[1.5px] text-secondary-foreground transition-colors hover:bg-primary"
+                        >
+                          <ShoppingBag size={14} strokeWidth={2} />
+                          OPTIONS
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => add(product)}
+                          className="flex flex-1 items-center justify-center gap-2 bg-secondary py-2.5 text-[11px] font-semibold tracking-[1.5px] text-secondary-foreground transition-colors hover:bg-primary">
+                          <ShoppingBag size={14} strokeWidth={2} />
+                          {inCartSlugs.has(product.slug) ? "ADDED" : "ADD"}
+                        </button>
+                      )}
                       <Link
                         href={`/products/${product.slug}`}
                         aria-label={"View " + product.name}

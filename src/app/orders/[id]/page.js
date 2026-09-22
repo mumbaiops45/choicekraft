@@ -12,9 +12,10 @@ import {
   Truck,
 } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
-import { OrderDetailSkeleton } from "../../components/skeletons/Skeleton";
+import { OrderDetailSkeleton, SlowLoadHint } from "../../components/skeletons/Skeleton";
 import { useAuth } from "../../store/AuthStore";
 import useRevalidateOnFocus from "../../hooks/useRevalidateOnFocus";
+import useSlowLoadHint from "../../hooks/useSlowLoadHint";
 import {
   cancelOrder,
   getCancelReasons,
@@ -106,6 +107,8 @@ export default function OrderDetailPage({ params }) {
     isAuthenticated && !cancelling
   );
 
+  const slowLoad = useSlowLoadHint(restoring || loading);
+
   /** Opens the cancel form and pulls the reasons the backend will accept. */
   const startCancel = async () => {
     setConfirming(true);
@@ -175,6 +178,7 @@ export default function OrderDetailPage({ params }) {
           <span className="sr-only">Loading…</span>
           <OrderDetailSkeleton />
         </div>
+        <SlowLoadHint show={slowLoad} />
       </>
     );
   }
