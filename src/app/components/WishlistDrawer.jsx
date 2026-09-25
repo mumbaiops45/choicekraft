@@ -149,7 +149,7 @@ export default function WishlistDrawer({ open, onClose }) {
           </div>
         ) : (
           <>
-            <ul className="flex-1 divide-y divide-line overflow-y-auto px-6">
+            <ul className="flex-1 divide-y divide-line overflow-y-auto overscroll-contain px-6">
               {wishlist.products.map((product) => {
                 // Same product as a line in the cart, if there is one.
                 const inCart = cart.items.find(

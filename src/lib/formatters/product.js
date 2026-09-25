@@ -20,6 +20,13 @@ import { quoteFor } from "@/lib/data/notebookQuotes";
 /** Category slug whose products are ChoiceKraft's own printed note books. */
 export const BOOK_CATEGORY_SLUG = "notebooks";
 
+/**
+ * Stock at or below this counts as "low" — mirrors the admin dashboard's own
+ * LOW_STOCK_AT, so a shopper and the admin agree on what "low" means for the
+ * same product.
+ */
+export const LOW_STOCK_THRESHOLD = 10;
+
 /** `category` arrives populated, or as a bare id when it is not. */
 const readCategory = (raw) => {
   const category = raw?.category;
@@ -76,6 +83,9 @@ export function formatProduct(raw) {
     image: readImage(raw),
     stock,
     inStock: stock > 0,
+    // Variants carry their own stock — the parent's own count is not
+    // meaningful for one, so this never applies to a `hasVariants` product.
+    lowStock: !raw.hasVariants && stock > 0 && stock <= LOW_STOCK_THRESHOLD,
     hasVariants: Boolean(raw.hasVariants),
     isActive: raw.isActive !== false,
 

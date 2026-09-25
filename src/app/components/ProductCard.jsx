@@ -64,8 +64,19 @@ export default function ProductCard({ product }) {
           )}
 
           {/* Badges stack down the left — book covers carry the printed
-              ChoiceKraft logo in their top-right corner. */}
+              ChoiceKraft logo in their top-right corner. Stock badges lead
+              the stack: they're the most consequential thing on the card. */}
           <div className="pointer-events-none absolute left-0 top-4 flex flex-col items-start gap-2">
+            {!product.hasVariants && !product.inStock && (
+              <span className="bg-danger px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-white">
+                Sold Out
+              </span>
+            )}
+            {product.lowStock && (
+              <span className="bg-warning px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-white">
+                Low Stock
+              </span>
+            )}
             {product.badge && (
               <span className="bg-primary px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-primary-foreground">
                 {product.badge}
@@ -100,6 +111,12 @@ export default function ProductCard({ product }) {
             )}
           </div>
 
+          {product.lowStock && (
+            <p className="mt-1 text-[12px] font-semibold text-warning">
+              Only {product.stock} left in stock
+            </p>
+          )}
+
           {/* mt-auto pins every button to the bottom, so buttons line up across
               a row no matter how long the names above them are. */}
           <div className="mt-auto pt-5">
@@ -112,6 +129,13 @@ export default function ProductCard({ product }) {
                 className="block w-full bg-secondary py-3 text-center text-[12px] font-semibold tracking-[2px] text-secondary-foreground transition-colors group-hover:bg-primary"
               >
                 SELECT OPTIONS
+              </span>
+            ) : !product.inStock ? (
+              <span
+                aria-hidden="true"
+                className="block w-full cursor-not-allowed bg-line py-3 text-center text-[12px] font-semibold tracking-[2px] text-muted"
+              >
+                SOLD OUT
               </span>
             ) : (
               <button

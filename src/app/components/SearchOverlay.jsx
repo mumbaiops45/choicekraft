@@ -96,7 +96,7 @@ export default function SearchOverlay({ open, onClose }) {
             </button>
           </div>
 
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="max-h-[60vh] overflow-y-auto overscroll-contain">
             {term.length < 2 ? (
               <div className="py-8">
                 <p className="text-[13px] font-semibold uppercase tracking-[2px] text-muted">

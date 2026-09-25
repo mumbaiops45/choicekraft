@@ -479,7 +479,7 @@ export default function AccountPanel({ open, onClose }) {
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
           {restoring ? (
             <p className="py-10 text-center text-[13px] text-muted">
               Checking your session…

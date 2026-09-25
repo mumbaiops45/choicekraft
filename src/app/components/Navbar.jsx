@@ -9,6 +9,7 @@ import { useWishlist } from "../store/WishlistStore";
 import CartDrawer from "./CartDrawer";
 import WishlistDrawer from "./WishlistDrawer";
 import SearchOverlay from "./SearchOverlay";
+import { isScrollLocked } from "../hooks/useScrollLock";
 import AccountPanel from "./AccountPanel";
 import {
   Search,
@@ -50,7 +51,12 @@ export default function Navbar() {
   // Float as a contained bar at the top of the page, then stick full-width once
   // the user scrolls past the first slice of the hero.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    // While an overlay pins the body, scrollY reads 0 even though the page
+    // has not moved — ignore it, or the bar would jump back to its top state.
+    const onScroll = () => {
+      if (isScrollLocked()) return;
+      setScrolled(window.scrollY > 60);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);

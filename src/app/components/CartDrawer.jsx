@@ -158,7 +158,7 @@ export default function CartDrawer() {
           </div>
         ) : (
           <>
-            <ul className="flex-1 divide-y divide-line overflow-y-auto px-6">
+            <ul className="flex-1 divide-y divide-line overflow-y-auto overscroll-contain px-6">
               {items.map((item) => (
                 <li key={item.key} className="flex gap-4 py-5">
                   <div className="h-[92px] w-[74px] shrink-0 overflow-hidden bg-surface">

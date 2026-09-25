@@ -297,3 +297,16 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Touch screens: iOS Safari zooms the whole page in on any field whose text is
+   under 16px (most fields here are 14px), then pans around to follow the caret
+   as you type. Keeping form text at 16px on touch devices stops the zoom
+   without disabling pinch-zoom for everyone. Unlayered, so it wins over the
+   Tailwind text-[14px] utilities. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

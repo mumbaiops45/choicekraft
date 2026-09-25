@@ -310,7 +310,7 @@ export default function ProductBrowser({ products, activeCategory }) {
                   <article className="group flex flex-col gap-6 border border-line bg-white p-5 transition-shadow hover:shadow-[0_14px_34px_rgba(0,0,0,0.10)] sm:flex-row">
                     <Link
                       href={`/products/${product.slug}`}
-                      className="w-full shrink-0 overflow-hidden bg-white sm:w-[190px]"
+                      className="relative w-full shrink-0 overflow-hidden bg-white sm:w-[190px]"
                     >
                       <img
                         src={product.image}
@@ -323,6 +323,16 @@ export default function ProductBrowser({ products, activeCategory }) {
                             : "aspect-square object-contain p-3")
                         }
                       />
+                      {!product.hasVariants && !product.inStock && (
+                        <span className="pointer-events-none absolute left-0 top-3 bg-danger px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-white">
+                          Sold Out
+                        </span>
+                      )}
+                      {product.lowStock && (
+                        <span className="pointer-events-none absolute left-0 top-3 bg-warning px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-white">
+                          Low Stock
+                        </span>
+                      )}
                     </Link>
 
                     <div className="flex flex-1 flex-col">
@@ -351,6 +361,12 @@ export default function ProductBrowser({ products, activeCategory }) {
                         )}
                       </div>
 
+                      {product.lowStock && (
+                        <p className="mt-1 text-[12px] font-semibold text-warning">
+                          Only {product.stock} left in stock
+                        </p>
+                      )}
+
                       {product.hasVariants ? (
                         <Link
                           href={`/products/${product.slug}`}
@@ -358,6 +374,13 @@ export default function ProductBrowser({ products, activeCategory }) {
                         >
                           SELECT OPTIONS
                         </Link>
+                      ) : !product.inStock ? (
+                        <span
+                          aria-hidden="true"
+                          className="mt-5 block w-full cursor-not-allowed bg-line py-3 text-center text-[12px] font-semibold tracking-[2px] text-muted sm:w-[190px]"
+                        >
+                          SOLD OUT
+                        </span>
                       ) : (
                         <button
                           onClick={() => add(product)}
